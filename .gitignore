@@ -1,4 +1,9 @@
+# Ignore all files inside Data folder 
 /code/Data/*
 !/code/Data/
+!/code/Data/README.md
 
-/__pycache__/*
+# Ignora i file di cache compilati di Python
+__pycache__/
+*.pyc
+*.pyo
