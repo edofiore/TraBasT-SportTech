@@ -1,2 +1,4 @@
-/Data/*
-!/Data/
+/code/Data/*
+!/code/Data/
+
+/__pycache__/*
