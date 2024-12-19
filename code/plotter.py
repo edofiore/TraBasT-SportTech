@@ -407,6 +407,8 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
   
   print(f"Showing distances:\n{distances[:10]}")
 
+    verticesCompare = align_pelvises(vertices, verticesCompare)
+
   line_set = o3d.geometry.LineSet()
   line_set_compare = o3d.geometry.LineSet() if compareData else None
   # line_set.points = o3d.utility.Vector3dVector(vertices)
