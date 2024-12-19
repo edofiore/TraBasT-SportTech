@@ -321,12 +321,12 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
     #'Head' : ['Neck'], #we know  head is not connected to anything new
     'LeftShoulder' : ['LeftArm'],
     'LeftArm' : ['LeftForeArm', 'LeftForeArmRoll'],
-    # 'LeftForeArm' : ['LeftForeArmRoll'],
+    'LeftForeArm' : ['LeftHand'],
     'LeftForeArmRoll' : ['LeftHand'],
     #'LHand' : ['LFArm'], #we know  hand is not connected to anything new
     'RightShoulder' : ['RightArm'],
     'RightArm' : ['RightForeArm', 'RightForeArmRoll'],
-    # 'RightForeArm' : ['RightForeArmRoll'],
+    'RightForeArm' : ['RightHand'],
     'RightForeArmRoll' : ['RightHand'],
     #'RightHand' : ['RightForeArmRoll'], #we know  hand is not connected to anything new
     'LeftUpLeg' : ['LeftLeg'],
