@@ -289,6 +289,8 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
 
   bonesPosDict = {}
   bonesPosDictCompare = {}
+  
+  # this is the skeleton graph for optitrack 
   # jointsGraph = {
   #   'Hip' : ['Ab', 'RThigh', 'LThigh'],
   #   'Ab' : ['Chest'],
@@ -359,6 +361,35 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
   lists_of_points = list(zip(*lists_of_points))
   if compareData:
     lists_of_pointsCompare = list(zip(*lists_of_pointsCompare))
+  
+  def downsample_list(lists_of_points, lists_of_pointsCompare):
+        # Calculate step size for regular removal
+        lenV = len(lists_of_points)
+        lenVC = len(lists_of_pointsCompare)
+        if lenV == lenVC:
+          return vertices, lists_of_pointsCompare
+        if lenV > lenVC:
+          long_video = lists_of_points
+          target_length = lenVC
+        else:
+          long_video = lists_of_pointsCompare
+          target_length = lenV
+        
+        step = len(long_video) / target_length
+        
+        # Select frames to remove
+        for i in range(target_length):
+          if i % step == 0:
+            del long_video[i]
+        
+        if lenV > lenVC:
+          return long_video, lists_of_pointsCompare
+        else:
+          return lists_of_points, long_video
+      
+  if compareData:
+      lists_of_points, lists_of_pointsCompare = downsample_list(lists_of_points, lists_of_pointsCompare)
+  
   vertices = [] # numpy array
   verticesCompare = []
   # we adapt a list of tuples [xyz, xyz, xyz, xyz] to Open3D
@@ -426,10 +457,11 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
       # Iteration over all the point clouds
       videoWriter = cv2.VideoWriter(os.path.join(SAVE_VIDEO_PATH, (fName + '.avi')), cv2.VideoWriter_fourcc(*'DIVX'), FPS, (720, 480))
       for i, skeletonPoints in enumerate(vertices):
-        if i%3 == 0:
-          continue
-        if i%4 == 0:
-          continue
+        # if i%3 == 0:
+        #   continue
+        # if i%4 == 0:
+        #   continue
+        print(f"Frame {i}")
         visualizer.clear_geometries()
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(skeletonPoints)
@@ -451,13 +483,24 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
       print("Video saved")
       break
 
+    
     elif option == '0':
+      # edo
+      # starting_point = 2520
+      # stopping_point = 2640
+      #nick
+      # starting_point = 865
+      # stopping_point = 1030
+      # vertices = vertices[2520:2640] #edo
+      # verticesCompare = verticesCompare[865:1030] #nick
+
       print("Showing video...")
       for i, skeletonPoints in enumerate(vertices):
-        if i%3 == 0:
-          continue
-        if i%4 == 0:
-          continue
+        # if i%3 == 0:
+        #   continue
+        # if i%4 == 0:
+        #   continue
+        # print(f"Frame {i}")
         visualizer.clear_geometries()
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(skeletonPoints)
@@ -480,10 +523,12 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
                                             # x is only 1 (we see the right side) or -1 (we see the left side) 
                                             # y is rotation top/bottom view, the closest to 0, the more the bottom view
         view_control.set_up([-1, 1, 1]) #Sets the up direction for the camera
-        view_control.set_zoom(1) #Sets the zoom factor of the camera (little zoom in, big zoom out)
+        view_control.set_zoom(1.4) #Sets the zoom factor of the camera (little zoom in, big zoom out)
 
         visualizer.poll_events()
         visualizer.update_renderer()
+        if i == 3500:
+          break
       
       visualizer.destroy_window()
       print("Video not saved")
