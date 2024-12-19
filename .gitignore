@@ -3,7 +3,9 @@
 !/code/Data/
 !/code/Data/README.md
 
-# Ignora i file di cache compilati di Python
+# Ignore __pycache__
 __pycache__/
 *.pyc
 *.pyo
+
+/env/*
