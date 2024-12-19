@@ -5,6 +5,7 @@ from global_constants import *
 from I_O import *
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from scale_skeleton import *
 
 # The number of frames per second for the videos we want to save
 FPS = 90
@@ -315,18 +316,18 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
   jointsGraph = {
     'Hips' : ['Spine',  'LeftUpLeg', 'RightUpLeg'],
     'Spine' : ['Spine1'],
-    'Spine1' : ['Spine2'],
+    'Spine1' : ['Spine2', 'LeftShoulder', 'RightShoulder'],
     'Spine2' : ['Neck'],
     'Neck' : ['Head',  'LeftShoulder', 'RightShoulder'],
     #'Head' : ['Neck'], #we know  head is not connected to anything new
-    'LeftShoulder' : ['LeftArm'],
-    'LeftArm' : ['LeftForeArm', 'LeftForeArmRoll'],
-    'LeftForeArm' : ['LeftHand'],
+    'LeftShoulder' : ['LeftArm', 'RightShoulder', 'Spine1', 'Spine2'],
+    'LeftArm' : ['LeftForeArm', 'Spine'],
+    'LeftForeArm' : ['LeftForeArmRoll'],
     'LeftForeArmRoll' : ['LeftHand'],
     #'LHand' : ['LFArm'], #we know  hand is not connected to anything new
-    'RightShoulder' : ['RightArm'],
-    'RightArm' : ['RightForeArm', 'RightForeArmRoll'],
-    'RightForeArm' : ['RightHand'],
+    'RightShoulder' : ['RightArm', 'LeftShoulder', 'Spine1', 'Spine2'],
+    'RightArm' : ['RightForeArm', 'Spine'],
+    'RightForeArm' : ['RightForeArmRoll'],
     'RightForeArmRoll' : ['RightHand'],
     #'RightHand' : ['RightForeArmRoll'], #we know  hand is not connected to anything new
     'LeftUpLeg' : ['LeftLeg'],
@@ -358,7 +359,7 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
   lists_of_points = list(zip(*lists_of_points))
   if compareData:
     lists_of_pointsCompare = list(zip(*lists_of_pointsCompare))
-  vertices = []
+  vertices = [] # numpy array
   verticesCompare = []
   # we adapt a list of tuples [xyz, xyz, xyz, xyz] to Open3D
   for skeletonPoints in lists_of_points:
@@ -385,6 +386,14 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
             end_idx = getIndex(end, bonesPosDictCompare)
             lines_compare.append([start_idx, end_idx])
   
+  ## Scaling skeletons
+  # Scale the skeletons only if the user wants to compare 2 performances
+  if compareData:
+    # Scale the first skeleton  
+    vertices = scale_multiple_frames(lines, vertices)
+    # Scale the second skeleton to compare
+    verticesCompare = scale_multiple_frames(lines, verticesCompare)
+
   line_set = o3d.geometry.LineSet()
   line_set_compare = o3d.geometry.LineSet() if compareData else None
   # line_set.points = o3d.utility.Vector3dVector(vertices)
@@ -478,37 +487,7 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
       
       visualizer.destroy_window()
       print("Video not saved")
-      break
+      # break
 
     else:
       print("Invalid input, try again.")
-    
-    
-
-def multiplePLot(data, fName):
-    jointsGraph = {
-    'Hips' : ['Spine',  'LeftUpLeg', 'RightUpLeg'],
-    'Spine' : ['Spine1'],
-    'Spine1' : ['Spine2'],
-    'Spine2' : ['Neck'],
-    'Neck' : ['Head',  'LeftShoulder', 'RightShoulder'],
-    #'Head' : ['Neck'], #we know  head is not connected to anything new
-    'LeftShoulder' : ['LeftArm'],
-    'LeftArm' : ['LeftForeArm', 'LeftForeArmRoll'],
-    'LeftForeArm' : ['LeftHand'],
-    'LeftForeArmRoll' : ['LeftHand'],
-    #'LHand' : ['LFArm'], #we know  hand is not connected to anything new
-    'RightShoulder' : ['RightArm'],
-    'RightArm' : ['RightForeArm', 'RightForeArmRoll'],
-    'RightForeArm' : ['RightHand'],
-    'RightForeArmRoll' : ['RightHand'],
-    #'RightHand' : ['RightForeArmRoll'], #we know  hand is not connected to anything new
-    'LeftUpLeg' : ['LeftLeg'],
-    'LeftLeg' : ['LeftFoot'],
-    'LeftFoot' : ['LeftToeBase'],
-    #'LeftToeBase' : ['LeftFoot'], #we know  toe is not connected to anything new
-    'RightUpLeg' : ['RightLeg'],
-    'RightLeg' : ['RightFoot'],
-    'RightFoot' : ['RightToeBase'],
-    #'RToe' : ['RFoot'] #we know  toe is not connected to anything new
-  }
