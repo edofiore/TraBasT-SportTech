@@ -425,6 +425,8 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
     # Scale the second skeleton to compare
     verticesCompare = scale_multiple_frames(lines, verticesCompare)
 
+    verticesCompare = align_pelvises(vertices, verticesCompare)
+
   line_set = o3d.geometry.LineSet()
   line_set_compare = o3d.geometry.LineSet() if compareData else None
   # line_set.points = o3d.utility.Vector3dVector(vertices)
@@ -532,7 +534,7 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
       
       visualizer.destroy_window()
       print("Video not saved")
-      # break
+      break
 
     else:
       print("Invalid input, try again.")
