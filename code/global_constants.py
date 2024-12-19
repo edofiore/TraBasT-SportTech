@@ -55,12 +55,15 @@ SQUAT1 = 'Carlo_1'
 SQUAT2 = 'Edoardo_1'
 SQUAT3 = 'Sebastiano_Squat1_100'
 SQUAT4 = 'Nick_1'
+SQUAT5 = 'Edoardo_2'
 RIGID_BODY = 'rigid_body'
 
 ANIMATION = 'animation'
 MARKER = 'markers'
 
-CSV_LIST = [SQUAT1 + EXTENSIONS[Extension.csv], SQUAT2 + EXTENSIONS[Extension.csv], SQUAT3 + EXTENSIONS[Extension.csv], RIGID_BODY + EXTENSIONS[Extension.csv], SQUAT4 + EXTENSIONS[Extension.csv]]
+CSV_LIST = [SQUAT1 + EXTENSIONS[Extension.csv], SQUAT2 + EXTENSIONS[Extension.csv], 
+            SQUAT3 + EXTENSIONS[Extension.csv], RIGID_BODY + EXTENSIONS[Extension.csv], 
+            SQUAT4 + EXTENSIONS[Extension.csv], SQUAT5 + EXTENSIONS[Extension.csv]]
 OTHER_LIST = [ANIMATION + EXTENSIONS[Extension.bvh], MARKER + EXTENSIONS[Extension.c3d]]
 FPS_LIST = ['60fps', '360fps']
 
