@@ -362,33 +362,11 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
   if compareData:
     lists_of_pointsCompare = list(zip(*lists_of_pointsCompare))
   
-  def downsample_list(lists_of_points, lists_of_pointsCompare):
-        # Calculate step size for regular removal
-        lenV = len(lists_of_points)
-        lenVC = len(lists_of_pointsCompare)
-        if lenV == lenVC:
-          return vertices, lists_of_pointsCompare
-        if lenV > lenVC:
-          long_video = lists_of_points
-          target_length = lenVC
-        else:
-          long_video = lists_of_pointsCompare
-          target_length = lenV
-        
-        step = len(long_video) / target_length
-        
-        # Select frames to remove
-        for i in range(target_length):
-          if i % step == 0:
-            del long_video[i]
-        
-        if lenV > lenVC:
-          return long_video, lists_of_pointsCompare
-        else:
-          return lists_of_points, long_video
-      
   if compareData:
-      lists_of_points, lists_of_pointsCompare = downsample_list(lists_of_points, lists_of_pointsCompare)
+      # manually cut the lists of points to select only the shoots
+      lists_of_points = lists_of_points[2520:2642] #edo
+      lists_of_pointsCompare = lists_of_pointsCompare[865:1030] #nick
+      lists_of_points, lists_of_pointsCompare = downsample_video(lists_of_points, lists_of_pointsCompare)
   
   vertices = [] # numpy array
   verticesCompare = []
@@ -424,6 +402,10 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
     vertices = scale_multiple_frames(lines, vertices)
     # Scale the second skeleton to compare
     verticesCompare = scale_multiple_frames(lines, verticesCompare)
+    # Compute the performance of the two skeletons
+    distances = compute_performance(vertices, verticesCompare)
+  
+  print(f"Showing distances:\n{distances[:10]}")
 
   line_set = o3d.geometry.LineSet()
   line_set_compare = o3d.geometry.LineSet() if compareData else None
@@ -461,7 +443,6 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
         #   continue
         # if i%4 == 0:
         #   continue
-        print(f"Frame {i}")
         visualizer.clear_geometries()
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(skeletonPoints)
@@ -484,15 +465,13 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
       break
 
     
-    elif option == '0':
+    elif option == '0': # not saving the video
       # edo
       # starting_point = 2520
       # stopping_point = 2640
       #nick
       # starting_point = 865
       # stopping_point = 1030
-      # vertices = vertices[2520:2640] #edo
-      # verticesCompare = verticesCompare[865:1030] #nick
 
       print("Showing video...")
       for i, skeletonPoints in enumerate(vertices):
@@ -527,12 +506,10 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
 
         visualizer.poll_events()
         visualizer.update_renderer()
-        if i == 3500:
-          break
       
       visualizer.destroy_window()
       print("Video not saved")
-      # break
+      break
 
     else:
       print("Invalid input, try again.")
