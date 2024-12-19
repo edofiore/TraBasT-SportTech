@@ -10,12 +10,13 @@ from matplotlib.animation import FuncAnimation
 FPS = 90
 
 # An interactive menu to select what to plot
-def plotData(filePath=None, data=None):
+def plotData(filePath=None, data=None, compareFilePath=None, compareData=None, COMPARE = False):
 
     if data is None or filePath is None:
       print(f'Error: Invalid data or file path\n')
 
     fName = os.path.basename(filePath)
+    fNameCompare = os.path.basename(compareFilePath) if COMPARE else None
     fName, fExt = os.path.splitext(fName)
     
     if fExt == EXTENSIONS[Extension.csv]:
@@ -53,12 +54,15 @@ def plotData(filePath=None, data=None):
           print()
 
         return True
+      elif COMPARE:
+        print(f'Plotting superposed skeletons of {fName} and {fNameCompare}')
+        skeletonJointsPlot(data, fName, compareData, fNameCompare)
+        return True
       else:
         while True:
             print(f'Please select the type of skeleton visualization:')
             print(f'1. Skeleton with markers')
             print(f'2. Skeleton joints')
-            print(f'3. Multiple skeletons')
             print(f'0. Exit the program')
 
             option = input(f'Enter your choice: ')
@@ -70,11 +74,6 @@ def plotData(filePath=None, data=None):
             elif option == '2':
               print(f'Skeleton joints')
               skeletonJointsPlot(data, fName)
-              return True
-            
-            elif option == '3':
-              print(f'Multiple skeletons')
-              multiplePlot(data, fName)
               return True
 
             elif option == '0':
@@ -192,7 +191,6 @@ def setVisualizer(pointSize):
   visualizer.create_window(window_name='Open3D', width=720, height=480)
   visualizer.get_render_option().background_color = np.asarray([0, 0, 0]) #black background
   visualizer.get_render_option().point_size = pointSize
-
   return visualizer
 
 # Function to visualize 3D marker data from a list of models. Depending on whether filtering
@@ -286,9 +284,10 @@ def skeletonMarkerPlot(data, fName):
 # Function to visualize 3D skeleton data by plotting the joints and connecting bones.
 # It constructs a graph representing the skeleton structure, where each joint is connected
 # to others according to a predefined hierarchy.
-def skeletonJointsPlot(data, fName):
+def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
 
   bonesPosDict = {}
+  bonesPosDictCompare = {}
   # jointsGraph = {
   #   'Hip' : ['Ab', 'RThigh', 'LThigh'],
   #   'Ab' : ['Chest'],
@@ -344,17 +343,29 @@ def skeletonJointsPlot(data, fName):
     if BASKET or model._description['Type'] != 'Marker':
       points = list(zip(model._positions['x'], model._positions['y'], model._positions['z']))
       bonesPosDict[model._description['Name']] = points
-
+  
+  if compareData:
+    for model in compareData:
+      if BASKET or model._description['Type'] != 'Marker':
+        points = list(zip(model._positions['x'], model._positions['y'], model._positions['z']))
+        bonesPosDictCompare[model._description['Name']] = points
+  
   # get the lists of points from the dictionary values
   lists_of_points = list(bonesPosDict.values())
+  lists_of_pointsCompare = list(bonesPosDictCompare.values()) if compareData else None
 
   # use zip to combine corresponding points from each list into tuples
   lists_of_points = list(zip(*lists_of_points))
-
+  if compareData:
+    lists_of_pointsCompare = list(zip(*lists_of_pointsCompare))
   vertices = []
+  verticesCompare = []
   # we adapt a list of tuples [xyz, xyz, xyz, xyz] to Open3D
   for skeletonPoints in lists_of_points:
     vertices.append(np.array(skeletonPoints))
+  if compareData:
+    for skeletonPoints in lists_of_pointsCompare:
+      verticesCompare.append(np.array(skeletonPoints))
 
   # create a Visualizer object
   visualizer = setVisualizer(10.0)
@@ -366,17 +377,30 @@ def skeletonJointsPlot(data, fName):
       for end in ends:
           end_idx = getIndex(end, bonesPosDict)
           lines.append([start_idx, end_idx])
-
+  lines_compare = []
+  if compareData:
+    for start, ends in jointsGraph.items():
+        start_idx = getIndex(start, bonesPosDictCompare)
+        for end in ends:
+            end_idx = getIndex(end, bonesPosDictCompare)
+            lines_compare.append([start_idx, end_idx])
+  
   line_set = o3d.geometry.LineSet()
+  line_set_compare = o3d.geometry.LineSet() if compareData else None
   # line_set.points = o3d.utility.Vector3dVector(vertices)
   line_set.lines = o3d.utility.Vector2iVector(lines)
-
+  if compareData:
+    line_set_compare.lines = o3d.utility.Vector2iVector(lines)
+  
   # set line color (e.g., red)
   line_color = [1, 0, 0] # RGB color (red in live and blue in saved video)
+  line_color_compare = [0, 0, 1] # RGB color (blue in live and red in saved video)
 
   # create a LineSet with colored lines
   line_set.colors = o3d.utility.Vector3dVector(np.tile(line_color, (len(lines), 1)))
-
+  if compareData:
+    line_set_compare.colors = o3d.utility.Vector3dVector(np.tile(line_color_compare, (len(lines_compare), 1)))
+    
   while True:
     print("Do you want to save the video?")
     print("1. YES")
@@ -412,6 +436,7 @@ def skeletonJointsPlot(data, fName):
         image = (image * 255).astype(np.uint8)  # Convert to 8-bit image
         # Write the frame to the video
         videoWriter.write(image)
+      
       videoWriter.release()
       visualizer.destroy_window()
       print("Video saved")
@@ -432,6 +457,22 @@ def skeletonJointsPlot(data, fName):
         visualizer.add_geometry(line_set)
         visualizer.update_geometry(pcd)
         visualizer.update_geometry(line_set)
+        if compareData:
+          pcdCompare = o3d.geometry.PointCloud()
+          pcdCompare.points = o3d.utility.Vector3dVector(verticesCompare[i])
+          line_set_compare.points = o3d.utility.Vector3dVector(verticesCompare[i])
+          visualizer.add_geometry(pcdCompare)
+          visualizer.add_geometry(line_set_compare)
+          visualizer.update_geometry(pcdCompare)
+          visualizer.update_geometry(line_set_compare)
+        view_control = visualizer.get_view_control()
+        view_control.set_lookat([0, 0, 0]) #Sets the focus point of the camera (the point the camera looks at)
+        view_control.set_front([1, 1, 1]) #Change the camera direction: 
+                                            # x is only 1 (we see the right side) or -1 (we see the left side) 
+                                            # y is rotation top/bottom view, the closest to 0, the more the bottom view
+        view_control.set_up([-1, 1, 1]) #Sets the up direction for the camera
+        view_control.set_zoom(1) #Sets the zoom factor of the camera (little zoom in, big zoom out)
+
         visualizer.poll_events()
         visualizer.update_renderer()
       

@@ -210,7 +210,7 @@ class Experiment():
   # It is responsible for formatting data and creating models.
   # It involves some preprocessing of the data.
   def prepareModels(self, data):
-
+    
     print(f'Preparing data\n')
 
     self._models = createModels(self._inFile, data)
@@ -220,7 +220,10 @@ class Experiment():
   def plotModelsData(self, models=None):
 
     print(f'Plotting data\n')
-
+    COMPARE = False
+    
+    selfCopy = copy.deepcopy(self)
+    modelsCopy = copy.deepcopy(models)
     if models is None:
       option = '-2'
       while True:
@@ -229,20 +232,53 @@ class Experiment():
           print(f'0. No, continue with visualization of the single performance.')
 
           option = input(f'Enter your choice: ')
-          if option == '1':
+          if option == '1': # it was chosen to compare the performance
+            COMPARE = True
             option, srcPath = choice(
-            message='Please select the file on which you want to perform the operations:',
+            message='Please select the performance to compare:',
             lastLevel=False,
             params=CSV_LIST)
             if option not in ['0', 'r']:
-              break
-            else:
               srcPath = os.path.join(DATA_PATH, srcPath)
               print(f'File: {srcPath}')
-              
-          elif option == '0':
+              if srcPath == self._inFile:
+                print(f'You are comparing the same performance, please select another one\n')
+                continue
+              # we chose the performance to compare, now we process the data
+              if self.checkData():
+                self._inFile = srcPath
+              else:
+                print(f'Error: Invalid input file: {srcPath}\n')
+                break
+              dataToCompare = self.importData()
+              if dataToCompare is not None:
+                self.prepareModels(dataToCompare)
+                if len(self._models) > 0:
+                  if BASKET:
+                      print(f'Do you want to apply the Kalman filter to the data?')
+                      print(f'1. Yes')
+                      print(f'0. No')
+                      option = input(f'Enter your choice: ')
+                      if option == '1': # we apply the Kalman filter
+                        self.filterModelsData()
+                        break
+                      elif option == '0': # no kalman filter
+                        print(f'No filtering applied\n')
+                        break
+                  else: # no basket
+                    self.filterModelsData()
+                    break
+              else: # dataToCompare is None
+                print(f'Error: Something wrong reading the data\n')
+                return
+          elif option == '0': # no comparison
             break
-      plotData(self._inFile, self._models)
+      if COMPARE:
+        plotData(selfCopy._inFile, selfCopy._models, self._inFile, self._models, COMPARE)
+      else:
+        plotData(self._inFile, self._models)
+          
+      
     else:
       option = '-2'
       while True:
@@ -252,19 +288,50 @@ class Experiment():
 
           option = input(f'Enter your choice: ')
           if option == '1':
+            COMPARE = True
             option, srcPath = choice(
-            message='Please select the file on which you want to perform the operations:',
+            message='Please select the performance to compare:',
             lastLevel=False,
             params=CSV_LIST)
             if option not in ['0', 'r']:
-              break
-            else:
               srcPath = os.path.join(DATA_PATH, srcPath)
               print(f'File: {srcPath}')
-          
-          elif option == '0':
+              if srcPath == self._inFile:
+                print(f'You are comparing the same performance, please select another one\n')
+                continue
+              # we chose the performance to compare, now we process the data
+              if self.checkData():
+                self._inFile = srcPath
+              else:
+                print(f'Error: Invalid input file: {srcPath}\n')
+                break
+              dataToCompare = self.importData()
+              if dataToCompare is not None:
+                self.prepareModels(dataToCompare)
+                if len(self._models) > 0:
+                  if BASKET:
+                    while True:
+                      print(f'Do you want to apply the Kalman filter to the data?')
+                      print(f'1. Yes')
+                      print(f'0. No')
+                      option = input(f'Enter your choice: ')
+                      if option == '1':
+                        self.filterModelsData()
+                        break
+                      elif option == '0':
+                        print(f'No filtering applied\n')
+                        break
+                  else: # no basket
+                    self.filterModelsData()
+              else: # dataToCompare is None
+                print(f'Error: Something wrong reading the data\n')
+                return
+          elif option == '0': # no comparison
             break
-    plotData(self._inFile, models)
+      if COMPARE:
+        plotData(selfCopy._inFile, modelsCopy, self._inFile, models, COMPARE)
+      else:
+        plotData(self._inFile, models)
 
   def filterModelsData(self):
 
