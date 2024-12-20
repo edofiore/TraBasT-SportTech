@@ -60,6 +60,33 @@ def align_pelvises(skeleton_frames_1, skeleton_frames_2):
     # Return the aligned skeletons as a numpy array
     return np.array(skeleton_aligned_complete)     
 
+def downsample_video(lists_of_points, lists_of_pointsCompare):
+    # Calculate step size for regular removal
+    lenV = len(lists_of_points)
+    lenVC = len(lists_of_pointsCompare)
+    if lenV == lenVC:
+        return lists_of_points, lists_of_pointsCompare
+    if lenV > lenVC:
+        long_video = lists_of_points
+        target_length = lenVC
+    else:
+        long_video = lists_of_pointsCompare
+        target_length = lenV
 
+    indices = np.linspace(0, len(long_video)-1, target_length, dtype=int)
+    long_video = [long_video[i] for i in indices]
+
+    if lenV > lenVC:
+        return long_video, lists_of_pointsCompare
+    else:
+        return lists_of_points, long_video
+
+def compute_performance(vertices, verticesCompare):
+    # Compute the euclidean distance between the two skeletons
+    distances = [
+        np.linalg.norm(vertices[i] - verticesCompare[i])
+        for i in range(len(vertices))
+    ]
+    return distances
 
 
