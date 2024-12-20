@@ -364,8 +364,8 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
   
   if compareData:
       # manually cut the lists of points to select only the shoots
-      lists_of_points = lists_of_points[2520:2642] #edo
-      lists_of_pointsCompare = lists_of_pointsCompare[865:1030] #nick
+      # lists_of_points = lists_of_points[2520:2642] #edo
+      # lists_of_pointsCompare = lists_of_pointsCompare[865:1030] #nick
       lists_of_points, lists_of_pointsCompare = downsample_video(lists_of_points, lists_of_pointsCompare)
   
   vertices = [] # numpy array
@@ -405,7 +405,7 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
     # Compute the performance of the two skeletons
     distances = compute_performance(vertices, verticesCompare)
   
-  print(f"Showing distances:\n{distances[:10]}")
+    print(f"Showing distances:\n{distances[:10]}")
 
     verticesCompare = align_pelvises(vertices, verticesCompare)
 
