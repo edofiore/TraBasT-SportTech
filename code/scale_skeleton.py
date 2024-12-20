@@ -2,6 +2,12 @@ import numpy as np
 from fractions import Fraction
 import math
 
+ARMS_LIMIT = 350
+LEGS_LIMIT = 250
+OTHER_LIMIT = 140
+OVERALL_LIMIT = 710
+SPEED_LIMIT = 40
+
 # Compute the joint length with the euclidean distance between 2 joints.
 def compute_joint_length(point_a, point_b):
     return np.linalg.norm(point_b - point_a)
@@ -41,7 +47,8 @@ def scale_multiple_frames(lines, skeleton_frames):
         complete_scaled_skeleton.append(frame)
 
     return np.array(complete_scaled_skeleton)
-  
+
+# Align the pelvises of the two skeletons to have a better comparison
 def align_pelvises(skeleton_frames_1, skeleton_frames_2):
     skeleton_aligned_complete = []
 
@@ -61,27 +68,27 @@ def align_pelvises(skeleton_frames_1, skeleton_frames_2):
     # Return the aligned skeletons as a numpy array
     return np.array(skeleton_aligned_complete)     
 
-
+# Downsample the video or the gold standard to have the same number of frames
 def downsample_video(lists_of_points, lists_of_pointsCompare):
     # Calculate step size for regular removal
-    lenV = len(lists_of_points)
-    lenVC = len(lists_of_pointsCompare)
-    if lenV == lenVC:
-        return lists_of_points, lists_of_pointsCompare
-    if lenV > lenVC:
+    lenP = len(lists_of_points)
+    lenPC = len(lists_of_pointsCompare)
+    if lenP == lenPC:
+        return lists_of_points, lists_of_pointsCompare, lenP, lenPC
+    if lenP > lenPC:
         long_video = lists_of_points
-        target_length = lenVC
+        target_length = lenPC
     else:
         long_video = lists_of_pointsCompare
-        target_length = lenV
+        target_length = lenP
 
     indices = np.linspace(0, len(long_video)-1, target_length, dtype=int)
     long_video = [long_video[i] for i in indices]
 
-    if lenV > lenVC:
-        return long_video, lists_of_pointsCompare
+    if lenP > lenPC:
+        return long_video, lists_of_pointsCompare, lenP, lenPC
     else:
-        return lists_of_points, long_video
+        return lists_of_points, long_video, lenP, lenPC
     
 def compute_angle(skeleton_frames, idx_1, idx_2, idx_3, isMin=True):
     # # Indices of the RightArm and RightForeArm in the bones list
@@ -186,7 +193,8 @@ def compute_joint_angle_differences(vertices, verticesCompare, joint_parts, is_M
     return results_diff, results_angles
 
 
-def compute_performance(vertices, verticesCompare, bonesList):
+# Compute the performance of the shooting with respect to the gold standard
+def compute_performance(vertices, verticesCompare, bonesList, lenP, lenPCompare):
     
     # Compute the euclidean distance between the two skeletons, for each frame and for each bone
     distances = np.array([
@@ -227,10 +235,22 @@ def compute_performance(vertices, verticesCompare, bonesList):
         other_distances.append(distList[bonesList.index('RightShoulder')])
         other_distances.append(distList[bonesList.index('LeftShoulder')])
     
-    arms_metric = np.sum(arms_distances) * 1.5
-    legs_metric = np.sum(legs_distances)
+    speed_diff = lenP - lenPCompare
+    speed = 'good'
+    suggestion = 'keep this speed'
+    if speed_diff <= -SPEED_LIMIT:
+        speed = 'a little fast'
+        suggestion = 'slow down a little bit'
+    elif speed_diff >= SPEED_LIMIT:
+        speed = 'a little slow'
+        suggestion = 'speed up a little bit'
+    
+    speed_diff = abs(speed_diff) * 3.5
+        
+    arms_metric = np.sum(arms_distances) * 1.4
+    legs_metric = np.sum(legs_distances) * 1.1
     other_metric = np.sum(other_distances) * 0.5
-    overall_metric = arms_metric + legs_metric + other_metric
+    overall_metric = arms_metric + legs_metric + other_metric + speed_diff
 
     ### Compute the minimum angles and the corresponding frame for both skeletons
 
@@ -346,22 +366,26 @@ def compute_performance(vertices, verticesCompare, bonesList):
     print(results_max_diff)
 
 
+    print(f'Arms metric: {arms_metric}')
+    print(f'Legs metric: {legs_metric}')
+    print(f'Other metric: {other_metric}')
+    print(f'Overall metric: {overall_metric}')
+    
+    if overall_metric < OVERALL_LIMIT:
+        print('Your shooting is good, keep it up!')
+    else:
+        print('You should adjust a little your shooting, but do not be discouraged! I will help you')
+        if arms_metric > ARMS_LIMIT:
+            print('Your should adjust a little your arms')
+        if legs_metric > LEGS_LIMIT:
+            print('Your should adjust a little your legs')
+        if other_metric > OTHER_LIMIT:
+            print('Your should adjust a little your back and your movement as a whole')
+        
+    print(f'Your shooting is {speed}, try to {suggestion}')
 
     if True:
         pass
     
     return distances
-
-# def compute_angle(x1, y1, x2, y2):
-
-#     if (x2 - x1) != 0:
-#         slope1 = (y2 - y1) / (x2 - x1)
-#     elif (x2 - x1 )== 0:
-#         slope1 = math.inf
-
-#     angle1 = math.degrees(math.atan(slope1))
-
-#     angle_diff = abs(90 - angle1)
-
-#     return angle_diff
 
