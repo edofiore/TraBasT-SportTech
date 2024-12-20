@@ -123,8 +123,8 @@ def compute_performance(vertices, verticesCompare, bonesList):
         other_distances.append(distList[bonesList.index('RightShoulder')])
         other_distances.append(distList[bonesList.index('LeftShoulder')])
     
-    arms_metric = np.sum(arms_distances) * 1.5
-    legs_metric = np.sum(legs_distances)
+    arms_metric = np.sum(arms_distances) * 1.4
+    legs_metric = np.sum(legs_distances) * 1.1
     other_metric = np.sum(other_distances) * 0.5
     overall_metric = arms_metric + legs_metric + other_metric
     

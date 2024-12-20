@@ -405,10 +405,9 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
     verticesCompare = scale_multiple_frames(lines, verticesCompare)
     # Compute the performance of the two skeletons
     compute_performance(vertices, verticesCompare, list(bonesPosDict.keys()))
+
+    verticesCompare = align_pelvises(vertices, verticesCompare)
   
-
-  verticesCompare = align_pelvises(vertices, verticesCompare)
-
   line_set = o3d.geometry.LineSet()
   line_set_compare = o3d.geometry.LineSet() if compareData else None
   # line_set.points = o3d.utility.Vector3dVector(vertices)
