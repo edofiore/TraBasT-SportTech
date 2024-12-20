@@ -406,8 +406,8 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
     # Compute the performance of the two skeletons
     compute_performance(vertices, verticesCompare, list(bonesPosDict.keys()))
   
+    verticesCompare = align_pelvises(vertices, verticesCompare)
 
-  verticesCompare = align_pelvises(vertices, verticesCompare)
 
   line_set = o3d.geometry.LineSet()
   line_set_compare = o3d.geometry.LineSet() if compareData else None
@@ -511,7 +511,7 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
       
       visualizer.destroy_window()
       print("Video not saved")
-      break
+      # break
 
     else:
       print("Invalid input, try again.")

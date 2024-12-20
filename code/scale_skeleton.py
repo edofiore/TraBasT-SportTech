@@ -82,6 +82,109 @@ def downsample_video(lists_of_points, lists_of_pointsCompare):
         return long_video, lists_of_pointsCompare
     else:
         return lists_of_points, long_video
+    
+def compute_angle(skeleton_frames, idx_1, idx_2, idx_3, isMin=True):
+    # # Indices of the RightArm and RightForeArm in the bones list
+    # right_arm_idx = bonesList.index("RightArm")
+    # right_forearm_idx = bonesList.index("RightForeArm")
+
+     # Store the angles for each frame
+    angles = []
+
+    for frame in skeleton_frames:
+        # Get the points for RightArm and RightForeArm
+        point_segment_1_start = frame[idx_1]
+        point_segment_1_end = frame[idx_2]
+        point_segment_2_end = frame[idx_3]  # Assume bones are connected sequentially
+
+        # Vectors representing the two bones
+        vector_segment_1 = point_segment_1_end - point_segment_1_start
+        vector_segment_2 = point_segment_2_end - point_segment_1_end
+
+        # Compute the angle between the two vectors
+        dot_product = np.dot(vector_segment_1, vector_segment_2)
+        norm_product = np.linalg.norm(vector_segment_1) * np.linalg.norm(vector_segment_2)
+        angle = math.degrees(math.acos(dot_product / norm_product))  # Angle in degrees
+        
+        # Convert to the internal angle
+        internal_angle = 180 - angle  # Internal angle
+
+        angles.append(internal_angle)
+    
+    angle = 0
+    if(isMin):
+        # Find the frame with the minimum angle
+        angle = min(angles)
+    else: 
+        # Find the frame with the maximum angle
+        angle = max(angles)
+    best_frame_idx = angles.index(angle)
+    
+    return best_frame_idx, angle
+
+def compute_joint_angle_differences(vertices, verticesCompare, joint_parts, is_Min=True, joint_types=None):
+    """
+    Calculates the difference between the minimum or maximum angles for various body segments (elbows, knees, hips, arms, etc.)
+    Optionally, calculates the mean difference for specific joint types.
+
+    Parameters:
+    - vertices: the original skeleton (vertex frames)
+    - verticesCompare: the compared skeleton (vertex frames)
+    - joint_parts: dictionary of joints and the bones involved in them
+    - is_Min: if True, calculates the minimum angles; if False, calculates the maximum angles
+    - joint_types: a list of joint types to compute the mean for (e.g., ["elbows", "knees"]); if None, calculates the mean for all joints
+    
+    Returns:
+    - results: a dictionary with the angle differences for each body segment and the conditional mean difference.
+    """
+    results_diff = {}
+    results_angles = {}
+    
+    # Joint categories (types) for grouping
+    joint_categories = {
+        "elbows": ["RightElbow", "LeftElbow"],
+        "knees": ["RightKnee", "LeftKnee"],
+        "pelvis": ["RightHip", "LeftHip"],
+        "arms": ["RightArm", "LeftArm"],
+    }
+
+    # Iterate through all the joints and compute the angle differences
+    for joint_name, (idx_1, idx_2, idx_3) in joint_parts.items():
+        # Compute the minimum or maximum angle for the first skeleton
+        _, angle_1 = compute_angle(vertices, idx_1, idx_2, idx_3, isMin=is_Min)
+        
+        # Compute the minimum or maximum angle for the second skeleton (the compared one)
+        _, angle_2 = compute_angle(verticesCompare, idx_1, idx_2, idx_3, isMin=is_Min)
+        
+        # Compute the absolute difference between the angles
+        angle_diff = abs(angle_2 - angle_1)
+
+        # Save the angle in the results_angles dictionary
+        results_angles[f"{joint_name}_angles"] = (angle_1, angle_2)
+        
+        # Add the difference to the results dictionary
+        results_diff[f"{joint_name}_diff"] = angle_diff
+    
+    # If joint_types is specified, compute the mean for those specific joint types
+    if joint_types:
+        for joint_type in joint_types:
+            if joint_type in joint_categories:
+                # Collect all angle differences for the selected joint type
+                selected_joints = joint_categories[joint_type]
+                selected_diffs = [results_diff[joint] for joint in selected_joints if joint in results_diff]
+                
+                # Compute the mean difference for the selected joint type
+                if selected_diffs:
+                    mean_diff = sum(selected_diffs) / len(selected_diffs)
+                    results_diff[f"{joint_type}_mean_diff"] = mean_diff
+
+    # If joint_types is not specified, compute the overall mean difference
+    if not joint_types:
+        mean_diff = sum(results_diff.values()) / len(results_diff)
+        results_diff["mean_diff"] = mean_diff
+
+    return results_diff, results_angles
+
 
 def compute_performance(vertices, verticesCompare, bonesList):
     
@@ -128,10 +231,137 @@ def compute_performance(vertices, verticesCompare, bonesList):
     legs_metric = np.sum(legs_distances)
     other_metric = np.sum(other_distances) * 0.5
     overall_metric = arms_metric + legs_metric + other_metric
+
+    ### Compute the minimum angles and the corresponding frame for both skeletons
+
+    # ## Compute elbows angle
+    # # Compute right elbows angles
+    # _, min_right_elbow_angle = compute_angle(vertices, bonesList.index('RightArm'), bonesList.index("RightForeArm"), bonesList.index("RightForeArmRoll"))
+    # _, min_rigth_elbow_angle_GS = compute_angle(verticesCompare, bonesList.index('RightArm'), bonesList.index("RightForeArm"), bonesList.index("RightForeArmRoll"))
+    # # Compute the difference in the minimum angles
+    # min_right_elbow_angle_diff = abs(min_rigth_elbow_angle_GS - min_right_elbow_angle)
+
+    # # Compute left elbows angles
+    # _, min_left_elbow_angle = compute_angle(vertices, bonesList.index('LeftArm'), bonesList.index("LeftForeArm"), bonesList.index('LeftForeArmRoll'))
+    # _, min_left_elbow_angle_GS = compute_angle(verticesCompare, bonesList.index('LeftArm'), bonesList.index("LeftForeArm"), bonesList.index('LeftForeArmRoll'))
+    # # Compute the difference in the minimum angles
+    # min_left_elbows_angles_diff = abs(min_left_elbow_angle_GS - min_left_elbow_angle)
+
+    # ## Compute min arms angles
+    # # Compute right arms angles
+    # _, min_right_arm_angle = compute_angle(vertices, bonesList.index('Spine'), bonesList.index("RightArm"), bonesList.index('RightForeArm'))
+    # _, min_right_arm_angle_GS = compute_angle(verticesCompare, bonesList.index('Spine'), bonesList.index("RightArm"), bonesList.index('RightForeArm'))
+    # # Compute the difference in the minimum angles
+    # min_right_arms_angles_diff = abs(min_right_arm_angle_GS - min_right_arm_angle)
+  
+
+    # # Compute left arms angles
+    # _, min_left_arm_angle = compute_angle(vertices, bonesList.index('Spine'), bonesList.index("LeftArm"), bonesList.index('LeftForeArm'))
+    # _, min_left_arm_angle_GS = compute_angle(verticesCompare, bonesList.index('Spine'), bonesList.index("LeftArm"), bonesList.index('LeftForeArm'))
+    # # Compute the difference in the minimum angles
+    # min_left_arms_angles_diff = abs(min_left_arm_angle_GS - min_left_arm_angle)
     
+    # mean_min_arms_angles_diff =  (min_right_arms_angles_diff + min_left_arms_angles_diff) / 2
+
+    # ## Compute min knees angles
+    # # Compute right knees angles
+    # _, min_right_knee_angle = compute_angle(vertices, bonesList.index('RightUpLeg'), bonesList.index("RightLeg"), bonesList.index('RightFoot'))
+    # _, min_right_knee_angle_GS = compute_angle(verticesCompare, bonesList.index('RightUpLeg'), bonesList.index("RightLeg"), bonesList.index('RightFoot'))
+    # # Compute the difference in the minimum angles
+    # min_right_knees_angles_diff = abs(min_right_knee_angle_GS - min_right_knee_angle)
+
+    # # Compute left knees angles
+    # _, min_left_knee_angle = compute_angle(vertices, bonesList.index('LeftUpLeg'), bonesList.index("LeftLeg"), bonesList.index('LeftFoot'))
+    # _, min_left_knee_angle_GS = compute_angle(verticesCompare, bonesList.index('LeftUpLeg'), bonesList.index("LeftLeg"), bonesList.index('LeftFoot'))
+    # # Compute the difference in the minimum angles
+    # min_left_knees_angles_diff = abs(min_left_knee_angle_GS - min_left_knee_angle)
+
+    # mean_min_knees_angles_diff =  (min_right_knees_angles_diff + min_left_knees_angles_diff) / 2
+
+    # ## Compute min pelvis angles
+    # # Compute right hips angles
+    # _, min_right_hip_angle = compute_angle(vertices, bonesList.index('Spine'), bonesList.index('RightUpLeg'), bonesList.index("RightLeg"))
+    # _, min_right_hip_angle_GS = compute_angle(verticesCompare, bonesList.index('Spine'), bonesList.index('RightUpLeg'), bonesList.index("RightLeg"))
+    # # Compute the difference in the minimum angles
+    # min_right_hips_angles_diff = abs(min_right_hip_angle_GS - min_right_hip_angle)
+
+    # # Compute left hips angles
+    # _, min_left_hip_angle = compute_angle(vertices, bonesList.index('Spine'), bonesList.index('LeftUpLeg'), bonesList.index("LeftLeg"))
+    # _, min_left_hip_angle_GS = compute_angle(verticesCompare, bonesList.index('Spine'), bonesList.index('LeftUpLeg'), bonesList.index("LeftLeg"))
+    # # Compute the difference in the minimum angles
+    # min_left_hips_angles_diff = abs(min_left_hip_angle_GS - min_left_hip_angle)
+
+    # mean_min_hips_angles_diff =  (min_right_hips_angles_diff + min_left_hips_angles_diff) / 2
+
     
+    # ### Compute the maximum angles for both skeletons
+    # ## Compute max arms angles
+    # # Compute right arms angles
+    # _, max_right_arm_angle = compute_angle(vertices, bonesList.index('Spine'), bonesList.index("RightArm"), bonesList.index('RightForeArm'), isMin=False)
+    # _, max_right_arm_angle_GS = compute_angle(verticesCompare, bonesList.index('Spine'), bonesList.index("RightArm"), bonesList.index('RightForeArm'), isMin=False)
+    # # Compute the difference in the minimum angles
+    # max_right_arms_angles_diff = abs(max_right_arm_angle_GS - max_right_arm_angle)
+
+    # # Compute left arms angles
+    # _, max_left_arm_angle = compute_angle(vertices, bonesList.index('Spine'), bonesList.index("LeftArm"), bonesList.index('LeftForeArm'), isMin=False)
+    # _, max_left_arm_angle_GS = compute_angle(verticesCompare, bonesList.index('Spine'), bonesList.index("LeftArm"), bonesList.index('LeftForeArm'), isMin=False)
+    # # Compute the difference in the minimum angles
+    # max_left_arms_angles_diff = abs(max_left_arm_angle_GS - max_left_arm_angle)
+
+    # mean_max_arms_angles_diff =  (max_right_arms_angles_diff + max_left_arms_angles_diff) / 2
+
+
+    # Define the body segments with the corresponding bone indices
+    joint_parts_min = {
+        "RightElbow": (bonesList.index('RightArm'), bonesList.index("RightForeArm"), bonesList.index("RightForeArmRoll")),
+        "LeftElbow": (bonesList.index('LeftArm'), bonesList.index("LeftForeArm"), bonesList.index('LeftForeArmRoll')),
+        "RightArm": (bonesList.index("Spine"), bonesList.index('RightArm'), bonesList.index("RightForeArm")),
+        "LeftArm": (bonesList.index('Spine'), bonesList.index('LeftArm'), bonesList.index("LeftForeArm")),
+        "RightKnee": (bonesList.index('RightUpLeg'), bonesList.index("RightLeg"), bonesList.index('RightFoot')),
+        "LeftKnee": (bonesList.index('LeftUpLeg'), bonesList.index("LeftLeg"), bonesList.index('LeftFoot')),
+        "RightHip": (bonesList.index('Spine'), bonesList.index('RightUpLeg'), bonesList.index("RightLeg")),
+        "LeftHip": (bonesList.index('Spine'), bonesList.index('LeftUpLeg'), bonesList.index("LeftLeg")),
+    }
+
+    # Call the function to get min_angle differences and the mean for elbows
+    results_min_diff, results_min = compute_joint_angle_differences(vertices, verticesCompare, joint_parts_min, is_Min=True, joint_types=["knees", "pelvis", "arms"])
+
+    # Print the results
+    print("MINIMUM ANGLES")
+    print(results_min)
+    print(results_min_diff)
+
+    # Define the body segments with the corresponding bone indices
+    joint_parts_max = {
+        "RightArm": (bonesList.index("Spine"), bonesList.index('RightArm'), bonesList.index("RightForeArm")),
+        "LeftArm": (bonesList.index('Spine'), bonesList.index('LeftArm'), bonesList.index("LeftForeArm")),
+    }
+
+    # Call the function to get min_angle differences and the mean for elbows
+    results_max_diff, results_max = compute_joint_angle_differences(vertices, verticesCompare, joint_parts_max, is_Min=False, joint_types=["arms"])
+
+    # Print the results
+    print("MAXIMUM ANGLES")
+    print(results_max)
+    print(results_max_diff)
+
+
+
     if True:
         pass
     
     return distances
+
+# def compute_angle(x1, y1, x2, y2):
+
+#     if (x2 - x1) != 0:
+#         slope1 = (y2 - y1) / (x2 - x1)
+#     elif (x2 - x1 )== 0:
+#         slope1 = math.inf
+
+#     angle1 = math.degrees(math.atan(slope1))
+
+#     angle_diff = abs(90 - angle1)
+
+#     return angle_diff
 
