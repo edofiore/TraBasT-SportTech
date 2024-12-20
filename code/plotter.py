@@ -510,7 +510,7 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
       
       visualizer.destroy_window()
       print("Video not saved")
-      break
+      # break
 
     else:
       print("Invalid input, try again.")
