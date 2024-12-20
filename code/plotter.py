@@ -404,11 +404,10 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
     # Scale the second skeleton to compare
     verticesCompare = scale_multiple_frames(lines, verticesCompare)
     # Compute the performance of the two skeletons
-    distances = compute_performance(vertices, verticesCompare)
+    compute_performance(vertices, verticesCompare, list(bonesPosDict.keys()))
   
-    print(f"Showing distances:\n{distances[:10]}")
 
-    verticesCompare = align_pelvises(vertices, verticesCompare)
+  verticesCompare = align_pelvises(vertices, verticesCompare)
 
   line_set = o3d.geometry.LineSet()
   line_set_compare = o3d.geometry.LineSet() if compareData else None

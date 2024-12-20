@@ -3,7 +3,6 @@ from I_O import readData
 from models import createModels
 from plotter import plotData
 from data_manipulation import filterData
-# from main import choice
 
 # This class is a structured framework that guides the user through the various stages of conducting an experiment,
 # from data input to model processing and visualization. It enforces consistency through controlled property access
