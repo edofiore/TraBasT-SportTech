@@ -45,7 +45,7 @@ def align_pelvises(skeleton_frames_1, skeleton_frames_2):
     skeleton_aligned_complete = []
 
     for i, frames_1 in enumerate(skeleton_frames_1):
-         # Get the pelvis position from the current frame of skeleton 1
+        # Get the pelvis position from the current frame of skeleton 1
         pelvis_position = frames_1[0] # Coordinates of the pelvis marker
 
         # Calculate the difference between the two pelvises
@@ -61,5 +61,77 @@ def align_pelvises(skeleton_frames_1, skeleton_frames_2):
     return np.array(skeleton_aligned_complete)     
 
 
+def downsample_video(lists_of_points, lists_of_pointsCompare):
+    # Calculate step size for regular removal
+    lenV = len(lists_of_points)
+    lenVC = len(lists_of_pointsCompare)
+    if lenV == lenVC:
+        return lists_of_points, lists_of_pointsCompare
+    if lenV > lenVC:
+        long_video = lists_of_points
+        target_length = lenVC
+    else:
+        long_video = lists_of_pointsCompare
+        target_length = lenV
+
+    indices = np.linspace(0, len(long_video)-1, target_length, dtype=int)
+    long_video = [long_video[i] for i in indices]
+
+    if lenV > lenVC:
+        return long_video, lists_of_pointsCompare
+    else:
+        return lists_of_points, long_video
+
+def compute_performance(vertices, verticesCompare, bonesList):
+    
+    # Compute the euclidean distance between the two skeletons, for each frame and for each bone
+    distances = np.array([
+        np.linalg.norm(vertices[i] - verticesCompare[i], axis=1)
+        for i in range(len(vertices))
+    ])
+    
+    # We make three groups of distances: arms, legs and other
+    arms_distances = []
+    legs_distances = []
+    other_distances = []
+    
+    for distList in distances:
+        arms_distances.append(distList[bonesList.index('RightArm')])
+        arms_distances.append(distList[bonesList.index('LeftArm')])
+        arms_distances.append(distList[bonesList.index('RightForeArm')])
+        arms_distances.append(distList[bonesList.index('LeftForeArm')])
+        arms_distances.append(distList[bonesList.index('RightForeArmRoll')])
+        arms_distances.append(distList[bonesList.index('LeftForeArmRoll')])
+        arms_distances.append(distList[bonesList.index('RightHand')])
+        arms_distances.append(distList[bonesList.index('LeftHand')])
+        
+        legs_distances.append(distList[bonesList.index('RightUpLeg')])
+        legs_distances.append(distList[bonesList.index('LeftUpLeg')])
+        legs_distances.append(distList[bonesList.index('RightLeg')])
+        legs_distances.append(distList[bonesList.index('LeftLeg')])
+        legs_distances.append(distList[bonesList.index('RightFoot')])
+        legs_distances.append(distList[bonesList.index('LeftFoot')])
+        legs_distances.append(distList[bonesList.index('RightToeBase')])
+        legs_distances.append(distList[bonesList.index('LeftToeBase')])
+        
+        other_distances.append(distList[bonesList.index('Hips')])
+        other_distances.append(distList[bonesList.index('Spine1')])
+        other_distances.append(distList[bonesList.index('Spine2')])
+        other_distances.append(distList[bonesList.index('Spine')])
+        other_distances.append(distList[bonesList.index('Neck')])
+        other_distances.append(distList[bonesList.index('Head')])
+        other_distances.append(distList[bonesList.index('RightShoulder')])
+        other_distances.append(distList[bonesList.index('LeftShoulder')])
+    
+    arms_metric = np.sum(arms_distances) * 1.5
+    legs_metric = np.sum(legs_distances)
+    other_metric = np.sum(other_distances) * 0.5
+    overall_metric = arms_metric + legs_metric + other_metric
+    
+    
+    if True:
+        pass
+    
+    return distances
 
 
