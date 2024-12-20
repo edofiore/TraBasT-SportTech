@@ -3,11 +3,23 @@ from fractions import Fraction
 import math
 
 # LIMITS
-ARMS_LIMIT = 350
-LEGS_LIMIT = 250
+ARMS_LIMIT = 460
+LEGS_LIMIT = 260
 OTHER_LIMIT = 140
-OVERALL_LIMIT = 710
+OVERALL_LIMIT = 900
 SPEED_LIMIT = 40
+
+# ANGLES LIMITS
+# The LIMITS consider the 2 arms/elbows/knees together
+ELBOWS_ANGLE_LIMIT = 30 # Limit to know if the elbow is too bent or too extended
+ARMS_ANGLE_LIMIT = 30 # Limit only to know if the arms are too high or too low
+# if the arms range is too large means that the shot is too irregular, because there is a moment during the shot
+# where your arms are too low, and another where your arms are too much over/behind the head/neck
+# ARMS_R_RANGE_LIMIT = 130 # Range (max_R_arm - min_R_arm)
+# ARMS_L_RANGE_LIMIT = 30 # Range (max_L_arm - min_L_arm)
+KNEES_ANGLE_LIMIT = 15
+PELVIS_ANGLE_LIMIT = 3
+
 
 # METRICS
 ARMS_METRIC = 1.4
@@ -165,12 +177,15 @@ def compute_joint_angle_differences(vertices, vertices_compare, joint_parts, is_
     for joint_name, (idx_1, idx_2, idx_3) in joint_parts.items():
         # Compute the minimum or maximum angle for the first skeleton
         _, angle_1 = compute_angle(vertices, idx_1, idx_2, idx_3, is_min=is_min)
+        print(f"ANGLE_{joint_name}", angle_1)
         
         # Compute the minimum or maximum angle for the second skeleton (the compared one)
         _, angle_2 = compute_angle(vertices_compare, idx_1, idx_2, idx_3, is_min=is_min)
+        print(f"ANGLE_{joint_name}", angle_2)
         
         # Compute the absolute difference between the angles
-        angle_diff = abs(angle_2 - angle_1)
+        # angle_diff = abs(angle_2 - angle_1)
+        angle_diff = angle_2 - angle_1
 
         # Save the angle in the results_angles dictionary
         results_angles[f"{joint_name}_angles"] = (angle_1, angle_2)
@@ -257,10 +272,10 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     speed = 'good'
     suggestion = 'keep this speed'
     if speed_diff <= -SPEED_LIMIT:
-        speed = 'a little fast'
+        speed = 'a little too fast'
         suggestion = 'slow down a little bit'
     elif speed_diff >= SPEED_LIMIT:
-        speed = 'a little slow'
+        speed = 'a little too slow'
         suggestion = 'speed up a little bit'
 
 
@@ -281,9 +296,9 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     results_min_diff, results_min_angles = compute_joint_angle_differences(vertices, vertices_compare, joint_parts_min, is_min=True, joint_types=["Knees", "Pelvis", "Arms"])
 
     # Print the results
-    # print("MINIMUM ANGLES")
-    # print(f"Minimum angles: {results_min_angles}")
-    # print(f"Minimum angles diff: {results_min_diff}")
+    print("MINIMUM ANGLES")
+    print(f"Minimum angles: {results_min_angles}")
+    print(f"Minimum angles diff: {results_min_diff}")
 
     # Define the body segments with the corresponding bone indices
     joint_parts_max = {
@@ -295,37 +310,133 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     results_max_diff, results_max_angles = compute_joint_angle_differences(vertices, vertices_compare, joint_parts_max, is_min=False, joint_types=['Arms', 'Pelvis'])
 
     # Print the results
-    # print("MAXIMUM ANGLES")
-    # print(f"Maximum angles: {results_max_angles}")
-    # print(f"Maximum angles diff: {results_max_diff}")
+    print("MAXIMUM ANGLES")
+    print(f"Maximum angles: {results_max_angles}")
+    print(f"Maximum angles diff: {results_max_diff}")
 
     
     speed_diff = abs(speed_diff) * SPEED_METRIC
-    arms_angles_metric = results_min_diff['RightElbow_diff'] + results_min_diff['LeftElbow_diff'] + results_min_diff['Arms_mean_diff'] + results_max_diff['Arms_mean_diff']
+    arms_angles_metric = sum(map(abs, (results_min_diff['RightElbow_diff'], results_min_diff['LeftElbow_diff'], results_min_diff['Arms_mean_diff'], results_max_diff['Arms_mean_diff'])))
     arms_metric = (np.sum(arms_distances) + arms_angles_metric) * ARMS_METRIC
-    legs_angles_metric = results_min_diff['Pelvis_mean_diff'] + results_max_diff['Pelvis_mean_diff'] + results_min_diff['Knees_mean_diff']
+    legs_angles_metric = abs(results_min_diff['Pelvis_mean_diff'] + results_max_diff['Pelvis_mean_diff'] + results_min_diff['Knees_mean_diff'])
     legs_metric = (np.sum(legs_distances) + legs_angles_metric) * LEGS_METRIC
     other_metric = np.sum(other_distances) * OTHER_METRIC
     overall_metric = arms_metric + legs_metric + other_metric + speed_diff
 
 
     print(f'Total arms: {arms_angles_metric}')
-    print(f'Total legs: {arms_angles_metric}')
+    print(f'Total legs: {legs_angles_metric}')
     print(f'Arms metric: {arms_metric}')
     print(f'Legs metric: {legs_metric}')
     print(f'Other metric: {other_metric}')
     print(f'Overall metric: {overall_metric}')
+
+
+    elbows_R_min_diff = results_min_diff['RightElbow_diff'] 
+    elbows_L_min_diff = results_min_diff['LeftElbow_diff']
+    print ('elbow_R', elbows_R_min_diff)
+    print ('elbow_L', elbows_L_min_diff)
+    # arms_min_diff = results_min_diff['RightArm_diff'] + results_min_diff['LeftArm_diff']
+    # arms_max_diff = results_max_diff['RightArm_diff'] + results_max_diff['LeftArm_diff']
+    arms_mean_diff_min = results_min_diff['Arms_mean_diff']
+    arms_mean_diff_max = results_max_diff['Arms_mean_diff']
+    print('arms_mean_diff_min', arms_mean_diff_min)
+    print('arms_mean_diff_max', arms_mean_diff_max)
+    # range_arms_diff = arms_max_diff - arms_min_diff
+    range_R_arm = results_max_angles['RightArm_angles'][0] - results_min_angles['RightArm_angles'][0]
+    range_L_arm = results_max_angles['LeftArm_angles'][0] - results_min_angles['LeftArm_angles'][0]
+    range_R_arm_GS = results_max_angles['RightArm_angles'][1] - results_min_angles['RightArm_angles'][1]
+    range_L_arm_GS = results_max_angles['LeftArm_angles'][1] - results_min_angles['LeftArm_angles'][1]
+    print (f'r: {range_R_arm}, l: {range_L_arm}')
+    print (f'r: {range_R_arm_GS}, l: {range_L_arm_GS}')
+
+    # print('arms diff mx-min', range_arms_diff)
+    # knees_min_diff = results_min_diff['RightKnee_diff'] + results_min_diff['LeftKnee_diff']
+    knees_mean_diff = results_min_diff['Knees_mean_diff']
+
+    # TODO: check it, because could be due to the jump
+    pelvis_mean_diff = results_min_diff['Pelvis_mean_diff']
+    print ('pelvis mean', pelvis_mean_diff)
+    
     
     if overall_metric < OVERALL_LIMIT:
         print('Your shooting is good, keep it up!')
     else:
         print('You should adjust a little your shooting, but do not be discouraged! I will help you')
         if arms_metric > ARMS_LIMIT:
-            print('Your should adjust a little your arms')
+            print('You should adjust a little your arms')
+            # If the difference of the elbows angles with the GS is over the acceptable limit (TOO BENT), suggest increasing the elbow angles
+            # If the elbow is fully extended we have 180°
+            if elbows_R_min_diff > ELBOWS_ANGLE_LIMIT:
+                 print('Your right elbow is too bent. Try to extend your right elbow a little more.')
+            # if it is below the acceptable limit, suggest increasing the elbow angles
+            elif elbows_R_min_diff < -ELBOWS_ANGLE_LIMIT:
+                print('Your right elbow is too extended. Try to bend your right elbow a little more.')
+
+            if elbows_L_min_diff > ELBOWS_ANGLE_LIMIT:
+                 print('Your left elbow is too bent. Try to extend your left elbow a little more.')
+            # if it is below the acceptable limit, suggest increasing the elbow angles
+            elif elbows_L_min_diff < -ELBOWS_ANGLE_LIMIT:
+                print('Your left elbow is too extended. Try to bend your left elbow a little more.')
+            
+
+
+            ### At the moment could be the same beacause we don't know when the min and max point are reached
+            ## ??? WE COULD USE THE FRAME WHEN THE POINTS ARE REACHED ???
+            # FIRST PART OF THE MOVEMENT
+            # Hypotically this is during the preparation of the free throw
+            # Check if the mean difference with the GS exceeds the acceptable limits for arm angles,
+            # if it is greater than the positive limit, extends the arms more
+            if( arms_mean_diff_min > ARMS_ANGLE_LIMIT) | (arms_mean_diff_max < -ARMS_ANGLE_LIMIT): 
+                print('Your arms are too low. Try to raise them slightly.')
+            # if it is less than the negative limit, bends the arms more
+            elif (arms_mean_diff_min < -ARMS_ANGLE_LIMIT) | (arms_mean_diff_max > ARMS_ANGLE_LIMIT):
+                print('Your arms are too high. Try to lower them slightly.')
+
+           
+            ### !!! WE CAN THINK ABOUT THIS !!!
+
+            # # LAST PART OF THE MOVEMENT
+            # # Hypotically this is while the free throw end
+            # # Check if the arms go too much over/behind the head or not
+            # # if it is greater than the positive limit, positioned too close to the chest or below the ideal level
+            # if arms_max_diff > ARMS_LIMIT:
+            #     print('Your arms are too high. Try to lower them slightly.')
+            # # if it is less than the negative limit, extends the arms more
+            # elif arms_max_diff < -ARMS_LIMIT:
+            #     print('Your arms are too low. Try to raise them slightly.')
+
+            
+            # Check if the movements range of the rigth arm is too large respects to the GS's one
+            if range_R_arm > range_R_arm_GS + ARMS_ANGLE_LIMIT:
+                print('Your right arm movement is uncoordinated and too spread out. Try to maintain a smoother and more balanced motion.')
+
+            # Check if the movements range of the left arm is too large respects to the GS's one
+            if range_L_arm > range_L_arm_GS + ARMS_ANGLE_LIMIT:
+                print('Your left arm movement is inconsistent and too spread out. Try to maintain a smoother and more balanced motion.')
+
         if legs_metric > LEGS_LIMIT:
-            print('Your should adjust a little your legs')
+            print('You should adjust a little your legs')
+
+            # If the mean difference (between right and left) of the knees angles with the GS is over the acceptable limit (TOO STRAIGHT), suggest increasing the knee bend
+            if knees_mean_diff > KNEES_ANGLE_LIMIT:
+                 print('Your posture is too straight. Try to bend your knees a little more.')
+            # if it is below the negative limit, suggest decreasing the elbow bend
+            elif knees_mean_diff < -KNEES_ANGLE_LIMIT:
+                print('Your knees are too bent. Try to extend your knees a little more.')
+
         if other_metric > OTHER_LIMIT:
-            print('Your should adjust a little your back and your movement as a whole')
+            print('You should adjust a little your back and your movement as a whole')
+
+            # # TODO: check if this is correct and how is calculated the pelvis angle
+            # if pelvis_mean_diff > PELVIS_ANGLE_LIMIT:
+            #     print('Your posture is too rigid. Try bending forward slightly at the pelvis.')
+            # elif pelvis_mean_diff < -PELVIS_ANGLE_LIMIT:
+            #     print('Your posture is too bent forward. Try to straighten your pelvis a little.')
+
+
+
+
         
-    print(f'Your shooting is {speed}, try to {suggestion}')
+    print(f'Your speed shooting is {speed}, try to {suggestion}')
 
