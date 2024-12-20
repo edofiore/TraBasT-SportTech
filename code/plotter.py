@@ -21,41 +21,42 @@ def plotData(filePath=None, data=None, compareFilePath=None, compareData=None, C
     fName, fExt = os.path.splitext(fName)
     
     if fExt == EXTENSIONS[Extension.csv]:
-      if fName == RIGID_BODY:
-        while True:
-          print(f'Please select the type of rigid body visualization')
-          print(f'1. Original rigid body points')
-          print(f'2. Kalman filtered rigid body points')
-          print(f'3. Spline interpolation estimated rigid body points')
-          print(f'0. Exit the program')
+      # if fName == RIGID_BODY:
+      #   while True:
+      #     print(f'Please select the type of rigid body visualization')
+      #     print(f'1. Original rigid body points')
+      #     print(f'2. Kalman filtered rigid body points')
+      #     print(f'3. Spline interpolation estimated rigid body points')
+      #     print(f'0. Exit the program')
 
-          option = input(f'Enter your choice: ')
-          if option == '1':
-            print(f'Original rigid body points')
-            markerRigidBodyPlot(data, fName, typeOfFiltering=None)
-            return True
+      #     option = input(f'Enter your choice: ')
+      #     if option == '1':
+      #       print(f'Original rigid body points')
+      #       markerRigidBodyPlot(data, fName, typeOfFiltering=None)
+      #       return True
 
-          elif option == '2':
-            print(f'Kalman filtered rigid body points')
-            markerRigidBodyPlot(data, fName, KALMAN_FILTER)
-            return True
+      #     elif option == '2':
+      #       print(f'Kalman filtered rigid body points')
+      #       markerRigidBodyPlot(data, fName, KALMAN_FILTER)
+      #       return True
 
-          elif option == '3':
-            print(f'Spline interpolation estimated rigid body points')
-            markerRigidBodyPlot(data, fName, SPLINE_INTERPOLATION)
-            return True
+      #     elif option == '3':
+      #       print(f'Spline interpolation estimated rigid body points')
+      #       markerRigidBodyPlot(data, fName, SPLINE_INTERPOLATION)
+      #       return True
 
-          elif option == '0':
-            # exit the loop and end the program
-            break
+      #     elif option == '0':
+      #       # exit the loop and end the program
+      #       break
 
-          else:
-              print(f'Invalid input, try again.')
+      #     else:
+      #         print(f'Invalid input, try again.')
 
-          print()
+      #     print()
 
-        return True
-      elif COMPARE:
+      #   return True
+      # elif COMPARE:
+      if COMPARE:
         print(f'Plotting superposed skeletons of {fName} and {fNameCompare}')
         skeletonJointsPlot(data, fName, compareData, fNameCompare)
         return True
