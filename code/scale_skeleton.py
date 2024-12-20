@@ -1,5 +1,6 @@
 import numpy as np
 from fractions import Fraction
+import math
 
 # Compute the joint length with the euclidean distance between 2 joints.
 def compute_joint_length(point_a, point_b):
@@ -133,5 +134,4 @@ def compute_performance(vertices, verticesCompare, bonesList):
         pass
     
     return distances
-
 
