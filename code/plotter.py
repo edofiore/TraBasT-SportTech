@@ -382,27 +382,27 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
   visualizer = setVisualizer(10.0)
 
   # create line set to represent edges in the graph
-  lines = []
+  edges = []
   for start, ends in jointsGraph.items():
       start_idx = getIndex(start, bonesPosDict)
       for end in ends:
           end_idx = getIndex(end, bonesPosDict)
-          lines.append([start_idx, end_idx])
-  lines_compare = []
+          edges.append([start_idx, end_idx])
+  edges_compare = []
   if compareData:
     for start, ends in jointsGraph.items():
         start_idx = getIndex(start, bonesPosDictCompare)
         for end in ends:
             end_idx = getIndex(end, bonesPosDictCompare)
-            lines_compare.append([start_idx, end_idx])
+            edges_compare.append([start_idx, end_idx])
   
   ## Scaling skeletons
   # Scale the skeletons only if the user wants to compare 2 performances
   if compareData:
     # Scale the first skeleton  
-    vertices = scale_multiple_frames(lines, vertices)
+    vertices = scale_multiple_frames(edges, vertices)
     # Scale the second skeleton to compare
-    verticesCompare = scale_multiple_frames(lines, verticesCompare)
+    verticesCompare = scale_multiple_frames(edges, verticesCompare)
     # Compute the performance of the two skeletons
     compute_performance(vertices, verticesCompare, list(bonesPosDict.keys()), lenP, lenPC)
 
@@ -411,18 +411,18 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
   line_set = o3d.geometry.LineSet()
   line_set_compare = o3d.geometry.LineSet() if compareData else None
   # line_set.points = o3d.utility.Vector3dVector(vertices)
-  line_set.lines = o3d.utility.Vector2iVector(lines)
+  line_set.lines = o3d.utility.Vector2iVector(edges)
   if compareData:
-    line_set_compare.lines = o3d.utility.Vector2iVector(lines)
+    line_set_compare.lines = o3d.utility.Vector2iVector(edges)
   
   # set line color (e.g., red)
   line_color = [1, 0, 0] # RGB color (red in live and blue in saved video)
   line_color_compare = [0, 0, 1] # RGB color (blue in live and red in saved video)
 
   # create a LineSet with colored lines
-  line_set.colors = o3d.utility.Vector3dVector(np.tile(line_color, (len(lines), 1)))
+  line_set.colors = o3d.utility.Vector3dVector(np.tile(line_color, (len(edges), 1)))
   if compareData:
-    line_set_compare.colors = o3d.utility.Vector3dVector(np.tile(line_color_compare, (len(lines_compare), 1)))
+    line_set_compare.colors = o3d.utility.Vector3dVector(np.tile(line_color_compare, (len(edges_compare), 1)))
     
   while True:
     print("Do you want to save the video?")
