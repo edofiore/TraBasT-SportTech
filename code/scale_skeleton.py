@@ -44,8 +44,12 @@ ANGLES_LIMITS = {
     'R_ELBOW_ANGLE_LIMIT': SimpleNamespace(value=20, importance=4),  # Limit in order to know if the right elbow is too bent or too extended
     'L_ELBOW_ANGLE_LIMIT': SimpleNamespace(value=20, importance=4),  # Limit in order to know if the left elbow is too bent or too extended
     'ARMS_ANGLE_LIMIT': SimpleNamespace(value=30, importance=2),  # Limit in order to know if the arms are too high or too low
+
+    # If the arms range is too large means that the shot is too irregular, because there is a moment during the shot
+    # where your arms are too low, and another where your arms are too much over/behind the head/neck
     'R_ARM_RANGE_ANGLE_LIMIT': SimpleNamespace(value=30, importance=2),  # Limit in order to know if the movement of the right arm is too wide
     'L_ARM_RANGE_ANGLE_LIMIT': SimpleNamespace(value=30, importance=2),  # Limit in order to know if the movement of the left arm is too wide
+    
     'KNEES_ANGLE_LIMIT': SimpleNamespace(value=15, importance=2),  # Limit for knee bend during shooting
     'PELVIS_ANGLE_LIMIT': SimpleNamespace(value=3, importance=1),  # Limit for pelvis position
 }
@@ -311,6 +315,10 @@ def compute_joint_angle_differences(vertices, vertices_compare, joint_parts, is_
 
 def arms_evaluation(parameters):
 
+    """
+    - parameters: a list of parameters and metrics to define suggestions 
+    """
+
     arms_metric = parameters["arms_metric"]
     elbows_R_min_diff = parameters["elbows_R_min_diff"]
     elbows_L_min_diff = parameters["elbows_L_min_diff"]
@@ -371,6 +379,10 @@ def arms_evaluation(parameters):
 # define suggestions for the legs part and update score 
 def legs_evaluation(parameters):
 
+    """
+    - parameters: a list of parameters and metrics to define suggestions 
+    """
+
     legs_metric = parameters["legs_metric"]
     knees_mean_diff = parameters["knees_mean_diff"]
 
@@ -393,6 +405,10 @@ def legs_evaluation(parameters):
     return score, suggestions
 
 def other_evalutation(parameters):
+
+    """
+    - parameters: a list of parameters and metrics to define suggestions 
+    """
 
     other_metric = parameters["other_metric"]
     pelvis_mean_diff_min = parameters["pelvis_mean_diff_min"]
@@ -418,6 +434,11 @@ def other_evalutation(parameters):
 
 def speed_evaluation(parameters):
 
+    """
+    Parameters:
+    - parameters: a list of parameters and metrics to define suggestions 
+    """
+
     speed_diff = parameters["speed_diff"]
 
     score = 0.0
@@ -440,27 +461,17 @@ def speed_evaluation(parameters):
 
     return score, suggestions
 
-# actual_score = 0
 def define_suggestions(actual_score, parameters):
 
+    """
+    Parameters:
+    - actual_score: the score of the player. Update it depending on the quality of the free throw
+    - parameters: a list of parameters and metrics to define suggestions 
+    """
+
     suggestions = []
-    
-    # actual_score = parameters["actual_score"]
+
     overall_metric = parameters["overall_metric"]
-    # arms_metric = parameters["arms_metric"]
-    # elbows_R_min_diff = parameters["elbows_R_min_diff"]
-    # elbows_L_min_diff = parameters["elbows_L_min_diff"]
-    # arms_mean_diff_min = parameters["arms_mean_diff_min"]
-    # arms_mean_diff_max = parameters["arms_mean_diff_max"]
-    # range_R_arm = parameters["range_R_arm"]
-    # range_R_arm_GS = parameters["range_R_arm_GS"]
-    # range_L_arm = parameters["range_L_arm"]
-    # range_L_arm_GS = parameters["range_L_arm_GS"]
-    # legs_metric = parameters["legs_metric"]
-    # knees_mean_diff = parameters["knees_mean_diff"]
-    # other_metric = parameters["other_metric"]
-    # pelvis_mean_diff_min = parameters["pelvis_mean_diff_min"]
-    # speed_diff = parameters["speed_diff"]
     
     # Check if it is a good free threshold
     if overall_metric < LIMITS['OVERALL_LIMIT'].value:
@@ -470,8 +481,7 @@ def define_suggestions(actual_score, parameters):
     else:
         suggestions.append('You should adjust a little your shooting, but do not be discouraged! I will help you!\n')
 
-    # Evaluation of the player's free throw
-
+    ## Evaluation of the player's free throw
     # Arms evaluation
     new_score, new_suggestions = arms_evaluation(parameters)
     actual_score += new_score 
@@ -496,202 +506,37 @@ def define_suggestions(actual_score, parameters):
     if new_suggestions:
         suggestions.extend(new_suggestions)  
 
-    # Arms evaluation
-    # if arms_metric < LIMITS['ARMS_LIMIT'].value:
-    #     actual_score += LIMITS['ARMS_LIMIT'].importance
-    # else:
-    #     suggestions.append('Your arm positioning could use some adjustments.')
-        
-    #     # Right elbow
-    #     if elbows_R_min_diff > ANGLES_LIMITS['R_ELBOW_ANGLE_LIMIT'].value:
-    #         suggestions.append('-> Your right elbow is too bent. Try to extend your right elbow a little more.')
-    #     elif elbows_R_min_diff < -ANGLES_LIMITS['R_ELBOW_ANGLE_LIMIT'].value:
-    #         suggestions.append('-> Your right elbow is too extended. Try to bend your right elbow a little more.')
-    #     else: 
-    #         actual_score += ANGLES_LIMITS['R_ELBOW_ANGLE_LIMIT'].importance
-        
-    #     # Left elbow
-    #     if elbows_L_min_diff > ANGLES_LIMITS['L_ELBOW_ANGLE_LIMIT'].value:
-    #         suggestions.append('-> Your left elbow is too bent. Try to extend your left elbow a little more.')
-    #     elif elbows_L_min_diff < -ANGLES_LIMITS['L_ELBOW_ANGLE_LIMIT'].value:
-    #         suggestions.append('-> Your left elbow is too extended. Try to bend your left elbow a little more.')
-    #     else: 
-    #         actual_score += ANGLES_LIMITS['L_ELBOW_ANGLE_LIMIT'].importance
-
-    #     # Arm angles during the preparation
-    #     if (arms_mean_diff_min > ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].value) or (arms_mean_diff_max < -LIMITS['ARMS_ANGLE_LIMIT'].value):
-    #         suggestions.append('-> Your arms are too low. Try to raise them slightly.')
-    #     elif (arms_mean_diff_min < -ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].value) or (arms_mean_diff_max > LIMITS['ARMS_ANGLE_LIMIT'].value):
-    #         prisuggestions.appendnt('-> Your arms are too high. Try to lower them slightly.')
-    #     else:
-    #         actual_score += ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].importance
-
-    #     # Arm movement range checks
-    #     if range_R_arm > range_R_arm_GS + ANGLES_LIMITS['R_ARM_RANGE_ANGLE_LIMIT'].value:
-    #         suggestions.append('-> Your right arm movement is uncoordinated and too spread out. Try to maintain a smoother and more balanced motion.')
-    #     else:
-    #         actual_score += ANGLES_LIMITS['R_ARM_RANGE_ANGLE_LIMIT'].importance
-        
-    #     if range_L_arm > range_L_arm_GS + ANGLES_LIMITS['L_ARM_RANGE_ANGLE_LIMIT'].value:
-    #         suggestions.append('-> Your left arm movement is inconsistent and too spread out. Try to maintain a smoother and more balanced motion.')
-    #     else:
-    #         actual_score += ANGLES_LIMITS['L_ARM_RANGE_ANGLE_LIMIT'].importance
-
-
-    # Legs adjustments
-    # if legs_metric < LIMITS['LEGS_LIMIT'].value:
-    #     actual_score += LIMITS['LEGS_LIMIT'].importance
-    # else:
-    #     suggestions.append('\nLeg adjustments needed:')
-    #     suggestions.append('Your legs could use some adjustments. Try the following:')
-        
-    #     if knees_mean_diff > ANGLES_LIMITS['KNEES_ANGLE_LIMIT'].value:
-    #         suggestions.append('-> Your posture is too straight. Try to bend your knees a little more.')
-    #     elif knees_mean_diff < -ANGLES_LIMITS['KNEES_ANGLE_LIMIT'].value:
-    #         suggestions.append('-> Your knees are too bent. Try to extend your knees a little more.')
-    #     else:
-    #         actual_score += ANGLES_LIMITS['KNEES_ANGLE_LIMIT'].importance
-
-
-    # # Back and overall posture
-    # if other_metric < LIMITS['OTHER_LIMIT'].value:
-    #     actual_score += LIMITS['OTHER_LIMIT'].importance
-    # else:
-    #     suggestions.append('\nBack and posture adjustments needed:')
-    #     suggestions.append('Your overall posture could use some adjustments. Try the following:')
-        
-    #     # We should use this? It has sense?
-    #     if pelvis_mean_diff_min > ANGLES_LIMITS['PELVIS_ANGLE_LIMIT'].value:
-    #         suggestions.append('-> Your posture is too rigid. Try bending forward slightly at the pelvis.')
-    #     elif pelvis_mean_diff_min < -ANGLES_LIMITS['PELVIS_ANGLE_LIMIT'].value:
-    #         suggestions.append('-> Your posture is too bent forward. Try to straighten your pelvis a little.')
-    #     else:
-    #         actual_score += ANGLES_LIMITS['PELVIS_ANGLE_LIMIT'].importance
-
-    # speed = 'good'
-    # suggestion = 'keep this speed'
-    # if speed_diff <= -LIMITS['SPEED_LIMIT'].value:
-    #     speed = 'a little too fast'
-    #     suggestion = 'slow down a little bit'
-    # elif speed_diff >= LIMITS['SPEED_LIMIT'].value:
-    #     speed = 'a little too slow'
-    #     suggestion = 'speed up a little bit'
-    # else:
-    #     actual_score += LIMITS['SPEED_LIMIT'].importance
-
-    # # Speed suggestion
-    # suggestions.append('\nAbout the speed:')
-    # suggestions.append(f'Your shooting speed is {speed}. Try to {suggestion} for a more effective shot.\n')
-
     return actual_score, suggestions
 
-
-    # percentage = calculate_total_percentage(actual_score, LIMITS)
-    # print(f'TOTAL GOODNESS: {percentage}%.')
-
-    # if percentage <= 40:
-    #     print("BEGINNER: You're a beginner. Focus on the basics.\n")
-    # elif percentage <= 60:
-    #     print("AMATEUR PLAYER: The basics are set, now refine your technique.\n")
-    # elif percentage <= 80:
-    #     print("PRO PLAYER: Solid technique! Just fine-tune your shot.\n")
-    # elif percentage <= 90:
-    #     print("ELITE PLAYER: Excellent! You're almost at the top.\n")
-    # else:
-    #     print("GOAT PLAYER: Unbelievable! Your form matches the Gold Standard.\n")
-
-
-
-    # -----------------------------------------------------------------------------------------
-    ### OLD VERSION
-
-    #     if arms_metric > ARMS_LIMIT:
-    #         print('You should adjust a little your arms')
-    #         # If the difference of the elbows angles with the GS is over the acceptable limit (TOO BENT), suggest increasing the elbow angles
-    #         # If the elbow is fully extended we have 180°
-    #         if elbows_R_min_diff > ELBOWS_ANGLE_LIMIT:
-    #              print('Your right elbow is too bent. Try to extend your right elbow a little more.')
-    #         # if it is below the acceptable limit, suggest increasing the elbow angles
-    #         elif elbows_R_min_diff < -ELBOWS_ANGLE_LIMIT:
-    #             print('Your right elbow is too extended. Try to bend your right elbow a little more.')
-
-    #         if elbows_L_min_diff > ELBOWS_ANGLE_LIMIT:
-    #              print('Your left elbow is too bent. Try to extend your left elbow a little more.')
-    #         # if it is below the acceptable limit, suggest increasing the elbow angles
-    #         elif elbows_L_min_diff < -ELBOWS_ANGLE_LIMIT:
-    #             print('Your left elbow is too extended. Try to bend your left elbow a little more.')
-            
-
-
-    #         ### At the moment could be the same beacause we don't know when the min and max point are reached
-    #         ## ??? WE COULD USE THE FRAME WHEN THE POINTS ARE REACHED ???
-    #         # FIRST PART OF THE MOVEMENT
-    #         # Hypothetically this is during the preparation of the free throw
-    #         # Check if the mean difference with the GS exceeds the acceptable limits for arm angles,
-    #         # if it is greater than the positive limit, extends the arms more
-    #         if( arms_mean_diff_min > ARMS_ANGLE_LIMIT) | (arms_mean_diff_max < -ARMS_ANGLE_LIMIT): 
-    #             print('Your arms are too low. Try to raise them slightly.')
-    #         # if it is less than the negative limit, bends the arms more
-    #         elif (arms_mean_diff_min < -ARMS_ANGLE_LIMIT) | (arms_mean_diff_max > ARMS_ANGLE_LIMIT):
-    #             print('Your arms are too high. Try to lower them slightly.')
-
-        
-    #         ### !!! WE CAN THINK ABOUT THIS !!!
-
-    #         # # LAST PART OF THE MOVEMENT
-    #         # # Hypothetically this is while the free throw end
-    #         # # Check if the arms go too much over/behind the head or not
-    #         # # if it is greater than the positive limit, positioned too close to the chest or below the ideal level
-    #         # if arms_max_diff > ARMS_LIMIT:
-    #         #     print('Your arms are too high. Try to lower them slightly.')
-    #         # # if it is less than the negative limit, extends the arms more
-    #         # elif arms_max_diff < -ARMS_LIMIT:
-    #         #     print('Your arms are too low. Try to raise them slightly.')
-
-            
-    #         # Check if the movements range of the rigth arm is too large respects to the GS's one
-    #         if range_R_arm > range_R_arm_GS + ARMS_ANGLE_LIMIT:
-    #             print('Your right arm movement is uncoordinated and too spread out. Try to maintain a smoother and more balanced motion.')
-
-    #         # Check if the movements range of the left arm is too large respects to the GS's one
-    #         if range_L_arm > range_L_arm_GS + ARMS_ANGLE_LIMIT:
-    #             print('Your left arm movement is inconsistent and too spread out. Try to maintain a smoother and more balanced motion.')
-
-    #     if legs_metric > LEGS_LIMIT:
-    #         print('You should adjust a little your legs')
-
-    #         # If the mean difference (between right and left) of the knees angles with the GS is over the acceptable limit (TOO STRAIGHT), suggest increasing the knee bend
-    #         if knees_mean_diff > KNEES_ANGLE_LIMIT:
-    #              print('Your posture is too straight. Try to bend your knees a little more.')
-    #         # if it is below the negative limit, suggest decreasing the elbow bend
-    #         elif knees_mean_diff < -KNEES_ANGLE_LIMIT:
-    #             print('Your knees are too bent. Try to extend your knees a little more.')
-
-    #     if other_metric > OTHER_LIMIT:
-    #         print('You should adjust a little your back and your movement as a whole')
-
-    #         # # TODO: check if this is correct and how is calculated the pelvis angle
-    #         # if pelvis_mean_diff > PELVIS_ANGLE_LIMIT:
-    #         #     print('Your posture is too rigid. Try bending forward slightly at the pelvis.')
-    #         # elif pelvis_mean_diff < -PELVIS_ANGLE_LIMIT:
-    #         #     print('Your posture is too bent forward. Try to straighten your pelvis a little.')
-
-    # print(f'Your speed shooting is {speed}, try to {suggestion}')
-
-    # -----------------------------------------------------------------------------------------
-
 # Function to calculate the percentage-
-def calculate_total_percentage(final_score, metrics_limits):
+def calculate_total_percentage(final_score, metrics_limits, angles_limits):
+
+    """
+    Parameters:
+    - final_score: final score of the player
+    - metrics_limits: list of thresholds for the different parts of the body
+    - angles_limits: list of angle limits
+    """
+
     # Calculate the total possible score (sum of all 'importance' values)
     total_possible_score = sum(limit.importance for limit in metrics_limits.values())
+    total_possible_score += sum(limit.importance for limit in angles_limits.values())
     
     # Calculate the percentage
     percentage = round((final_score / total_possible_score) * 100)
     return percentage
 
 # define the goodness/level of the player free throw
-def free_throw_goodness(final_score, metrics_limits):
-    percentage = calculate_total_percentage(final_score, metrics_limits)
+def free_throw_goodness(final_score, metrics_limits, angles_limits):
+
+    """
+    Parameters:
+    - final_score: final score of the player
+    - metrics_limits: list of thresholds for the different parts of the body
+    - angles_limits: list of angle limits
+    """
+
+    percentage = calculate_total_percentage(final_score, metrics_limits, angles_limits)
 
     print('\n----------  FREE THROW EVALUTATION ----------')
     print(f'TOTAL GOODNESS: {percentage}%.')
@@ -759,8 +604,7 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
         other_distances.append(dist_list[bones_list.index('LeftShoulder')])
 
 
-    # Keeps track of the score through all the limits and metrics
-    actual_score = 0
+
     
     # Calculate the difference in frames between the free throw of the player and the one of the GS
     speed_diff = len_p - len_p_compare
@@ -782,11 +626,6 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     # Call the function to get min_angle differences and the mean for elbows
     results_min_diff, results_min_angles = compute_joint_angle_differences(vertices, vertices_compare, joint_parts_min, is_min=True, joint_types=["Knees", "Pelvis", "Arms"])
 
-    # Print the results
-    # print("MINIMUM ANGLES")
-    # print(f"Minimum angles: {results_min_angles}")
-    # print(f"Minimum angles diff: {results_min_diff}")
-
     # Define the body segments with the corresponding bone indices
     joint_parts_max = {
         'RightArm': (bones_list.index('Spine'), bones_list.index('RightArm'), bones_list.index('RightForeArm')),
@@ -796,13 +635,8 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     # Call the function to get min_angle differences and the mean for elbows
     results_max_diff, results_max_angles = compute_joint_angle_differences(vertices, vertices_compare, joint_parts_max, is_min=False, joint_types=['Arms', 'Pelvis'])
 
-    # Print the results
-    # print("MAXIMUM ANGLES")
-    # print(f"Maximum angles: {results_max_angles}")
-    # print(f"Maximum angles diff: {results_max_diff}")
 
     ## Define some important values to compute the metric
-
     # Apply the coefficent to the speed differnce
     speed_diff = abs(speed_diff) * SPEED_METRIC
 
@@ -816,8 +650,7 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     arms_mean_diff_max = results_max_diff['Arms_mean_diff']
     # Difference in average minimum knee angles (right and left) between the player and the gold standard
     knees_mean_diff = results_min_diff['Knees_mean_diff']
-
-    # TODO: check it, because could be due to the jump
+    # Difference in average minimum pelvis angle between the player and the gold standard
     pelvis_mean_diff_min = results_min_diff['Pelvis_mean_diff']
     # print ('pelvis mean', pelvis_mean_diff)
 
@@ -846,42 +679,12 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     print(f'Overall metric: {overall_metric}')
 
 
-    # print ('elbow_R', elbows_R_min_diff)
-    # print ('elbow_L', elbows_L_min_diff)
-    # arms_min_diff = results_min_diff['RightArm_diff'] + results_min_diff['LeftArm_diff']
-    # arms_max_diff = results_max_diff['RightArm_diff'] + results_max_diff['LeftArm_diff']
- 
-    # print('arms_mean_diff_min', arms_mean_diff_min)
-    # print('arms_mean_diff_max', arms_mean_diff_max)
-    # range_arms_diff = arms_max_diff - arms_min_diff
-
-
     # We calculate the max range of the right and left arms during the free throw
     # Hypothetically this give us an indication on the smoothing of the shot
     range_R_arm = results_max_angles['RightArm_angles'][0] - results_min_angles['RightArm_angles'][0]
     range_L_arm = results_max_angles['LeftArm_angles'][0] - results_min_angles['LeftArm_angles'][0]
     range_R_arm_GS = results_max_angles['RightArm_angles'][1] - results_min_angles['RightArm_angles'][1]
     range_L_arm_GS = results_max_angles['LeftArm_angles'][1] - results_min_angles['LeftArm_angles'][1]
-
-
-
-    # print (f'r: {range_R_arm}, l: {range_L_arm}')
-    # print (f'r: {range_R_arm_GS}, l: {range_L_arm_GS}')
-
-    # print('arms diff mx-min', range_arms_diff)
-    # knees_min_diff = results_min_diff['RightKnee_diff'] + results_min_diff['LeftKnee_diff']
-    
-    
-    # if overall_metric == 0.0:
-    #     print(f'\n Overall score: 100%')
-    # else:
-    #     overall_percentage = (limits['OVERALL_LIMIT'].value / overall_metric) * 100
-    #     print(f'\n Overall score: {overall_percentage:.2f}%')
-    
-
-    # # Calculate total percentage
-    # percentage = calculate_total_percentage(metrics, limits)
-    # print(f"Total performance percentage: {percentage:.2f}%")
 
 
     suggestions_parameters = {
@@ -903,10 +706,14 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     }
 
 
-    actual_score, suggestions = define_suggestions(actual_score, suggestions_parameters)
+    # Keeps track of the score through all the limits and metrics
+    actual_score = 0.0
+    # Defining the score and the suggestions
+    final_score, suggestions = define_suggestions(actual_score, suggestions_parameters)
 
-    # TODO: find a way to show the goodness before the suggestions
-    free_throw_goodness(actual_score, LIMITS)
+    # Evaluating the goodness of the free throw
+    free_throw_goodness(final_score, LIMITS)
 
+    # Print all the suggestions
     for suggestion in suggestions:
         print(suggestion)
