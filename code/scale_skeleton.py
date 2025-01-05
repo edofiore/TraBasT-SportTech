@@ -334,7 +334,10 @@ def arms_evaluation(parameters):
 
     # Evaluation of the player's free throw
     if arms_metric < LIMITS['ARMS_LIMIT'].value:
-        score += LIMITS['ARMS_LIMIT'].importance
+        score += (LIMITS['ARMS_LIMIT'].importance + ANGLES_LIMITS['R_ELBOW_ANGLE_LIMIT'].importance 
+                  + ANGLES_LIMITS['L_ELBOW_ANGLE_LIMIT'].importance + ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].importance 
+                  + ANGLES_LIMITS['R_ARM_RANGE_ANGLE_LIMIT'].importance + ANGLES_LIMITS['L_ARM_RANGE_ANGLE_LIMIT'].importance
+                  )
     else:
         suggestions.append('\nArms adjustments needed.')
         suggestions.append('Your arms positioning could use some adjustments. Try the following:')
@@ -359,7 +362,7 @@ def arms_evaluation(parameters):
         if (arms_mean_diff_min > ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].value) or (arms_mean_diff_max < -LIMITS['ARMS_ANGLE_LIMIT'].value):
             suggestions.append('-> Your arms are too low. Try to raise them slightly.')
         elif (arms_mean_diff_min < -ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].value) or (arms_mean_diff_max > LIMITS['ARMS_ANGLE_LIMIT'].value):
-            prisuggestions.appendnt('-> Your arms are too high. Try to lower them slightly.')
+            suggestions.append('-> Your arms are too high. Try to lower them slightly.')
         else:
             score += ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].importance
 
@@ -390,7 +393,7 @@ def legs_evaluation(parameters):
     score = 0.0
     
     if legs_metric < LIMITS['LEGS_LIMIT'].value:
-        score += LIMITS['LEGS_LIMIT'].importance
+        score += (LIMITS['LEGS_LIMIT'].importance + ANGLES_LIMITS['KNEES_ANGLE_LIMIT'].importance)
     else:
         suggestions.append('\nLegs adjustments needed.')
         suggestions.append('Your legs could use some adjustments. Try the following:')
@@ -417,7 +420,7 @@ def other_evalutation(parameters):
     score = 0.0
 
     if other_metric < LIMITS['OTHER_LIMIT'].value:
-        score += LIMITS['OTHER_LIMIT'].importance
+        score += (LIMITS['OTHER_LIMIT'].importance + ANGLES_LIMITS['PELVIS_ANGLE_LIMIT'].importance)
     else:
         suggestions.append('\nBack and posture adjustments needed.')
         suggestions.append('Your overall posture could use some adjustments. Try the following:')
@@ -712,7 +715,7 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     final_score, suggestions = define_suggestions(actual_score, suggestions_parameters)
 
     # Evaluating the goodness of the free throw
-    free_throw_goodness(final_score, LIMITS)
+    free_throw_goodness(final_score, LIMITS, ANGLES_LIMITS)
 
     # Print all the suggestions
     for suggestion in suggestions:
