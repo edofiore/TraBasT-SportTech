@@ -57,7 +57,7 @@ def plotData(filePath=None, data=None, compareFilePath=None, compareData=None, C
       #   return True
       # elif COMPARE:
       if COMPARE:
-        print(f'Plotting superposed skeletons of {fName} and {fNameCompare}')
+        print(f'Plotting superposed skeletons of {fName} and {fNameCompare}\n')
         skeletonJointsPlot(data, fName, compareData, fNameCompare)
         return True
       else:
