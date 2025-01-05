@@ -359,9 +359,9 @@ def arms_evaluation(parameters):
             score += ANGLES_LIMITS['L_ELBOW_ANGLE_LIMIT'].importance
 
         # Arm angles during the preparation
-        if (arms_mean_diff_min > ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].value) or (arms_mean_diff_max < -LIMITS['ARMS_ANGLE_LIMIT'].value):
+        if (arms_mean_diff_min > ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].value) or (arms_mean_diff_max < -ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].value):
             suggestions.append('-> Your arms are too low. Try to raise them slightly.')
-        elif (arms_mean_diff_min < -ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].value) or (arms_mean_diff_max > LIMITS['ARMS_ANGLE_LIMIT'].value):
+        elif (arms_mean_diff_min < -ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].value) or (arms_mean_diff_max > ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].value):
             suggestions.append('-> Your arms are too high. Try to lower them slightly.')
         else:
             score += ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].importance
