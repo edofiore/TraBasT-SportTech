@@ -158,11 +158,11 @@ def compute_performance(vertices, verticesCompare, bonesList, lenP, lenPCompare)
     else:
         print('You should adjust a little your shooting, but do not be discouraged! I will help you')
         if arms_metric > ARMS_LIMIT:
-            print('Your should adjust a little your arms')
+            print('You should adjust a little your arms')
         if legs_metric > LEGS_LIMIT:
-            print('Your should adjust a little your legs')
+            print('You should adjust a little your legs')
         if other_metric > OTHER_LIMIT:
-            print('Your should adjust a little your back and your movement as a whole')
+            print('You should adjust a little your back and your movement as a whole')
         
     print(f'Your shooting is {speed}, try to {suggestion}')
     
