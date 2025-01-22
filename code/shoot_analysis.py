@@ -1,6 +1,4 @@
 import numpy as np
-from fractions import Fraction
-import math
 import matplotlib.pyplot as plt
 from types import SimpleNamespace
 
@@ -22,8 +20,8 @@ LIMITS = {
     'ARMS_LIMIT': SimpleNamespace(value=460, importance=3),   # Maximum limit for arms
     'LEGS_LIMIT': SimpleNamespace(value=260, importance=2),   # Maximum limit for legs
     'OTHER_LIMIT': SimpleNamespace(value=140, importance=1),  # Maximum limit for posture
-    'OVERALL_LIMIT': SimpleNamespace(value=900, importance=5),  # Overall performance limit
     'SPEED_LIMIT': SimpleNamespace(value=40, importance=2),   # Limit for shooting speed
+    'OVERALL_LIMIT': SimpleNamespace(value=900, importance=5)  # Overall performance limit
 }
 
 # Limits for angles: accectable difference from the GS
@@ -300,11 +298,9 @@ def compute_joint_angle_differences(vertices, vertices_compare, joint_parts, is_
                     mean_diff = sum(selected_diffs) / len(selected_diffs)
                     results_diff[f"{joint_type}_mean_diff"] = mean_diff
 
-    
-    print(results_diff)
 
-    # If joint_types is not specified, compute the overall mean difference
-    total_mean_diff = sum(map(abs, results_diff.values())) / len(results_diff)
+    # Compute the overall mean difference
+    total_mean_diff = sum(results_diff.values()) / len(results_diff)
     results_diff["Total_mean_diff"] = total_mean_diff
 
     return results_diff, results_angles
@@ -722,6 +718,6 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     # Evaluating the goodness of the free throw
     free_throw_goodness(final_score, LIMITS, ANGLES_LIMITS)
 
-    # Printing all the suggestions
+    # Print all the suggestions
     for suggestion in suggestions:
         print(suggestion)
