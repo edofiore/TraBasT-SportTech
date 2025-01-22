@@ -14,6 +14,7 @@ from types import SimpleNamespace
 # The idea is to compare the defined limits with the actual performance, and if a limit is respected, 
 # the corresponding "importance" value is added to the final score. 
 # This allows to calculate the percentage of goodness of the shot, since we compare the final score with the total obtainable score.
+# The "value" field is the threshold for that specific body part.
 # ----------------------------------------------------------------------------------
 # Thresholds for the different parts of the body to compare with user
 LIMITS = {
