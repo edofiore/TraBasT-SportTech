@@ -61,7 +61,8 @@ DATA_PATH = os.path.join(script_dir, 'Data')
 DATA_PATH = os.path.normpath(DATA_PATH)
 
 # List all files in the folder
-CSV_LIST = os.listdir(DATA_PATH)
+# CSV_LIST = os.listdir(DATA_PATH)
+CSV_LIST = [file for file in os.listdir(DATA_PATH) if file.endswith('.csv')]
 
 # # FILES NAMES
 # SQUAT1 = 'Carlo_1'
