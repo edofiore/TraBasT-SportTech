@@ -219,9 +219,11 @@ def compute_angle(skeleton_frames, idx_1, idx_2, idx_3, is_min=True):
     else: 
         # Find the frame with the maximum angle
         angle = max(angles)
-    best_frame_idx = angles.index(angle)
+
+    # Take the frame related to the minimum angle. Could be useful for the analysis to view the skeleton ad this point.
+    # best_frame_idx = angles.index(angle)
     
-    return best_frame_idx, angle
+    return angle
 
 # Calculates the difference between the minimum or maximum angles for various body segments (elbows, knees, hips, arms, etc.)
 # Optionally, calculates the mean difference for specific joint types.
@@ -249,11 +251,11 @@ def compute_joint_angle_differences(vertices, vertices_compare, joint_parts, is_
     # Iterate through all the joints and compute the angle differences
     for joint_name, (idx_1, idx_2, idx_3) in joint_parts.items():
         # Compute the minimum or maximum angle for the first skeleton
-        _, angle_1 = compute_angle(vertices, idx_1, idx_2, idx_3, is_min=is_min)
+        angle_1 = compute_angle(vertices, idx_1, idx_2, idx_3, is_min=is_min)
         # print(f"ANGLE_{joint_name}-1", angle_1)
         
         # Compute the minimum or maximum angle for the second skeleton (the compared one)
-        _, angle_2 = compute_angle(vertices_compare, idx_1, idx_2, idx_3, is_min=is_min)
+        angle_2 = compute_angle(vertices_compare, idx_1, idx_2, idx_3, is_min=is_min)
         # print(f"ANGLE_{joint_name}-2", angle_2)
         
         # Compute the difference between the angles
