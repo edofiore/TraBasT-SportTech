@@ -1,6 +1,4 @@
 import numpy as np
-from fractions import Fraction
-import math
 import matplotlib.pyplot as plt
 from types import SimpleNamespace
 
@@ -10,27 +8,14 @@ from types import SimpleNamespace
 # ----------------------------
 
 
-### Define threshold for the different parts of the body
-# # LIMITS
-# ARMS_LIMIT = 460
-# LEGS_LIMIT = 260 
-# OTHER_LIMIT = 140
-# OVERALL_LIMIT = 900
-# SPEED_LIMIT = 40
-
-# # ANGLES LIMITS
-# # The LIMITS consider the 2 arms/elbows/knees together
-# ELBOWS_ANGLE_LIMIT = 20 # Limit to know if the elbow is too bent or too extended
-# ARMS_ANGLE_LIMIT = 30 # Limit only to know if the arms are too high or too low
-# # if the arms range is too large means that the shot is too irregular, because there is a moment during the shot
-# # where your arms are too low, and another where your arms are too much over/behind the head/neck
-# # ARMS_R_RANGE_LIMIT = 130 # Range (max_R_arm - min_R_arm)
-# # ARMS_L_RANGE_LIMIT = 30 # Range (max_L_arm - min_L_arm)
-# KNEES_ANGLE_LIMIT = 15
-# PELVIS_ANGLE_LIMIT = 3
-
-
-# Define threshold for the different parts of the body
+### Define thresholds and limits
+# ----------------------------------------------------------------------------------
+# The "importance" field is used to assign different priority levels to various parts of the free throw evaluation process. 
+# The idea is to compare the defined limits with the actual performance, and if a limit is respected, 
+# the corresponding "importance" value is added to the final score. 
+# This allows to calculate the percentage of goodness of the shot, since we compare the final score with the total obtainable score.
+# ----------------------------------------------------------------------------------
+# Thresholds for the different parts of the body to compare with user
 LIMITS = {
     'ARMS_LIMIT': SimpleNamespace(value=460, importance=3),   # Maximum limit for arms
     'LEGS_LIMIT': SimpleNamespace(value=260, importance=2),   # Maximum limit for legs
@@ -39,7 +24,7 @@ LIMITS = {
     'OVERALL_LIMIT': SimpleNamespace(value=900, importance=5)  # Overall performance limit
 }
 
-# Define the limits for angles: accectable difference from the GS
+# Limits for angles: accectable difference from the GS
 ANGLES_LIMITS = {
     'R_ELBOW_ANGLE_LIMIT': SimpleNamespace(value=20, importance=4),  # Limit in order to know if the right elbow is too bent or too extended
     'L_ELBOW_ANGLE_LIMIT': SimpleNamespace(value=20, importance=4),  # Limit in order to know if the left elbow is too bent or too extended
@@ -54,27 +39,26 @@ ANGLES_LIMITS = {
     'PELVIS_ANGLE_LIMIT': SimpleNamespace(value=3, importance=1),  # Limit for pelvis position
 }
 
-### Define coefficients to apply at the different parts of the body
-## They are choose empirically
-# METRICS
-ARMS_METRIC = 1.4   # The arms have a lot of importance in a free throw
-LEGS_METRIC = 1.1   # The legs are important, but less so than arms
-OTHER_METRIC = 0.5  # It has low importance in the free throw
-SPEED_METRIC = 3    # The speed of the free throw has a relevant importance
+## Define coefficients to apply at the different parts of the body
+# They are choose empirically
+ARMS_COEFF = 1.4   # The arms have a lot of importance in a free throw
+LEGS_COEFF = 1.1   # The legs are important, but less so than arms
+OTHER_COEFF = 0.5  # It has low importance in the free throw
+SPEED_COEFF = 3    # The speed of the free throw has a relevant importance
 
 
 # Compute the joint length with the euclidean distance between 2 joints.
 def compute_joint_length(point_a, point_b):
     return np.linalg.norm(point_b - point_a)
 
-# resize the skeleton scaling each joint
+# Resize the skeleton scaling each joint
 def resize_skeleton(skeleton, target_joints_length, current_joints_length):
 
     """
     Parameters:
     - skeleton: list of points of the skeleton in a single frame
-    - target_joints_length: length we want
-    - current_joints_length: current total length
+    - target_joints_length: total length we want (it refers to the summation of all the length of the bones)
+    - current_joints_length: current total length of the all bones
     """
 
     # Compute the ratio between the length we want and the current length
@@ -84,6 +68,7 @@ def resize_skeleton(skeleton, target_joints_length, current_joints_length):
 
     return scaled_skeleton
 
+# TODO: compute the ratio to scale only on the first frame, and use it for all the frames
 # Scaling the skeleton in a single frame 
 def scale_single_frame(edges, skeleton):
 
@@ -154,30 +139,30 @@ def align_pelvises(skeleton_frames_1, skeleton_frames_2):
     return np.array(skeleton_aligned_complete)     
 
 # Downsample the video of the user or of the gold standard to have the same number of frames
-def downsample_video(lists_of_points, lists_of_pointsCompare):
+def downsample_video(lists_of_points, lists_of_points_compare):
     """
     Parameters:
-    - lists_of_points: 
-    - lists_of_pointsCompare: 
+    - lists_of_points: list of the all points of the skeleton at each frame (video 1)
+    - lists_of_points_compare: list of the all points of the skeleton to compare at each frame (video to compare)
     """
 
     # Calculate step size for regular removal
     len_p = len(lists_of_points)
-    len_p_c = len(lists_of_pointsCompare)
+    len_p_c = len(lists_of_points_compare)
     if len_p == len_p_c:
-        return lists_of_points, lists_of_pointsCompare, len_p, len_p_c
+        return lists_of_points, lists_of_points_compare, len_p, len_p_c
     if len_p > len_p_c:
         long_video = lists_of_points
         target_length = len_p_c
     else:
-        long_video = lists_of_pointsCompare
+        long_video = lists_of_points_compare
         target_length = len_p
 
     indices = np.linspace(0, len(long_video)-1, target_length, dtype=int)
     long_video = [long_video[i] for i in indices]
 
     if len_p > len_p_c:
-        return long_video, lists_of_pointsCompare, len_p, len_p_c
+        return long_video, lists_of_points_compare, len_p, len_p_c
     else:
         return lists_of_points, long_video, len_p, len_p_c
     
@@ -270,8 +255,8 @@ def compute_joint_angle_differences(vertices, vertices_compare, joint_parts, is_
         _, angle_2 = compute_angle(vertices_compare, idx_1, idx_2, idx_3, is_min=is_min)
         # print(f"ANGLE_{joint_name}-2", angle_2)
         
-        # Compute the absolute difference between the angles
-        # angle_diff = abs(angle_2 - angle_1)
+        # Compute the difference between the angles
+        # The absolute is not computed since is useful know if the angle is positive or negative for the suggestion part
         angle_diff = angle_2 - angle_1
 
         # Save the angle in the results_angles dictionary
@@ -280,18 +265,24 @@ def compute_joint_angle_differences(vertices, vertices_compare, joint_parts, is_
         # Add the difference to the results dictionary
         results_diff[f"{joint_name}_diff"] = angle_diff
     
-   # Compute the mean for individual joint categories (like elbows, knees, etc.)
-    category_mean_diffs = {}
-    for joint_type, joint_names in joint_categories.items():
-        selected_diffs = [results_diff.get(f"{joint_name}_diff", 0) for joint_name in joint_names]
-        
-        # Compute the mean difference for the selected joint type
-        if selected_diffs:
-            mean_diff = sum(selected_diffs) / len(selected_diffs)
-            category_mean_diffs[f"{joint_type}_mean_diff"] = mean_diff
+#    # Compute the mean for individual joint categories (like elbows, knees, etc.)
+#     category_mean_diffs = {}
+#     for joint_type, joint_names in joint_categories.items():
+#         # Take the category
+#         selected_diffs = [results_diff.get(f"{joint_name}_diff", 0) for joint_name in joint_names]
+#         # print(joint_type, joint_names, selected_diffs)
+
+#         # Compute the mean difference for the selected joint type
+#         if selected_diffs:
+#             # Also for the mean, do not consider the absolute value for the single elements in order to don't lose the information about the extension and flexion
+#             mean_diff = sum(selected_diffs) / len(selected_diffs)
+#             # print("mean", mean_diff)
+#             category_mean_diffs[f"{joint_type}_mean_diff"] = mean_diff
     
-    # Add the category mean differences to the results
-    results_diff.update(category_mean_diffs)
+#     # Add the category mean differences to the results
+#     results_diff.update(category_mean_diffs)
+
+#     print(results_diff)
 
     # If joint_types is specified, compute the mean for those specific joint types
     if joint_types:
@@ -303,16 +294,18 @@ def compute_joint_angle_differences(vertices, vertices_compare, joint_parts, is_
                 
                 # Compute the mean difference for the selected joint type
                 if selected_diffs:
+                    # Also for the mean, do not consider the absolute value for the single elements in order to don't lose the information about the extension and flexion
                     mean_diff = sum(selected_diffs) / len(selected_diffs)
                     results_diff[f"{joint_type}_mean_diff"] = mean_diff
 
-    # If joint_types is not specified, compute the overall mean difference
+
+    # Compute the overall mean difference
     total_mean_diff = sum(results_diff.values()) / len(results_diff)
     results_diff["Total_mean_diff"] = total_mean_diff
 
     return results_diff, results_angles
-
-
+ 
+# Function to evaluate the arms in the free throw, and define suggestions
 def arms_evaluation(parameters):
 
     """
@@ -332,12 +325,13 @@ def arms_evaluation(parameters):
     suggestions = []
     score = 0.0
 
-    # Evaluation of the player's free throw
+    # If under the limit add all the possible score: the arms movement is good, and it doesn't require any adjustmant
     if arms_metric < LIMITS['ARMS_LIMIT'].value:
         score += (LIMITS['ARMS_LIMIT'].importance + ANGLES_LIMITS['R_ELBOW_ANGLE_LIMIT'].importance 
                   + ANGLES_LIMITS['L_ELBOW_ANGLE_LIMIT'].importance + ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].importance 
                   + ANGLES_LIMITS['R_ARM_RANGE_ANGLE_LIMIT'].importance + ANGLES_LIMITS['L_ARM_RANGE_ANGLE_LIMIT'].importance
                   )
+    # else check the specific parts of the arms to define suggestions or update the score
     else:
         suggestions.append('\nArms adjustments needed.')
         suggestions.append('Your arms positioning could use some adjustments. Try the following:')
@@ -379,7 +373,7 @@ def arms_evaluation(parameters):
 
     return score, suggestions
     
-# define suggestions for the legs part and update score 
+# Function to define suggestions for the legs part and to update score 
 def legs_evaluation(parameters):
 
     """
@@ -392,8 +386,10 @@ def legs_evaluation(parameters):
     suggestions = []
     score = 0.0
     
+    # If under the limit add all the possible score: the legs movement is good, and it doesn't require any adjustmant
     if legs_metric < LIMITS['LEGS_LIMIT'].value:
         score += (LIMITS['LEGS_LIMIT'].importance + ANGLES_LIMITS['KNEES_ANGLE_LIMIT'].importance)
+    # else check for each part of the legs if the movement is done correctly: if not give suggestions, else update the score
     else:
         suggestions.append('\nLegs adjustments needed.')
         suggestions.append('Your legs could use some adjustments. Try the following:')
@@ -407,6 +403,7 @@ def legs_evaluation(parameters):
 
     return score, suggestions
 
+# Function to define suggestions for the other parts of the body and to update score 
 def other_evalutation(parameters):
 
     """
@@ -419,8 +416,10 @@ def other_evalutation(parameters):
     suggestions = []
     score = 0.0
 
+    # If under the limit add all the possible score: the movement is good, and it doesn't require any adjustmant
     if other_metric < LIMITS['OTHER_LIMIT'].value:
         score += (LIMITS['OTHER_LIMIT'].importance + ANGLES_LIMITS['PELVIS_ANGLE_LIMIT'].importance)
+    # else check if the movement of the rest of the body is done correctly (at the moment we consider only the pelvis): if not give suggestions, else update the score
     else:
         suggestions.append('\nBack and posture adjustments needed.')
         suggestions.append('Your overall posture could use some adjustments. Try the following:')
@@ -435,6 +434,7 @@ def other_evalutation(parameters):
 
     return score, suggestions
 
+# Function to evaluate the free throw speed: if the speed is good update the score, otherwise give suggestions
 def speed_evaluation(parameters):
 
     """
@@ -442,17 +442,17 @@ def speed_evaluation(parameters):
     - parameters: a list of parameters and metrics to define suggestions 
     """
 
-    speed_diff = parameters["speed_diff"]
+    speed_metric = parameters["speed_metric"]
 
     score = 0.0
     suggestions = []
 
     speed = 'good'
     suggestion = 'keep this speed'
-    if speed_diff <= -LIMITS['SPEED_LIMIT'].value:
+    if speed_metric <= -LIMITS['SPEED_LIMIT'].value:
         speed = 'a little too fast'
         suggestion = 'slow down a little bit'
-    elif speed_diff >= LIMITS['SPEED_LIMIT'].value:
+    elif speed_metric >= LIMITS['SPEED_LIMIT'].value:
         speed = 'a little too slow'
         suggestion = 'speed up a little bit'
     else:
@@ -464,6 +464,8 @@ def speed_evaluation(parameters):
 
     return score, suggestions
 
+## Function to calculate the total score of the player and define the suggestions to give to him.
+# The total score is necessary to then compute the percentage of goodness of the free throw
 def define_suggestions(actual_score, parameters):
 
     """
@@ -476,11 +478,11 @@ def define_suggestions(actual_score, parameters):
 
     overall_metric = parameters["overall_metric"]
     
-    # Check if it is a good free threshold
+    # Check if it is a good free throw: if yes update the score
     if overall_metric < LIMITS['OVERALL_LIMIT'].value:
         actual_score += LIMITS['OVERALL_LIMIT'].importance
         suggestions.append('Your shooting is good, keep it up!\n')
-
+    # else give suggestions
     else:
         suggestions.append('You should adjust a little your shooting, but do not be discouraged! I will help you!\n')
 
@@ -488,7 +490,7 @@ def define_suggestions(actual_score, parameters):
     # Arms evaluation
     new_score, new_suggestions = arms_evaluation(parameters)
     actual_score += new_score 
-    if new_suggestions != []:
+    if new_suggestions:
         suggestions.extend(new_suggestions) 
 
     # Legs adjustments
@@ -511,7 +513,7 @@ def define_suggestions(actual_score, parameters):
 
     return actual_score, suggestions
 
-# Function to calculate the percentage-
+# Function to calculate the percentage
 def calculate_total_percentage(final_score, metrics_limits, angles_limits):
 
     """
@@ -539,6 +541,7 @@ def free_throw_goodness(final_score, metrics_limits, angles_limits):
     - angles_limits: list of angle limits
     """
 
+    # Compute the percentage
     percentage = calculate_total_percentage(final_score, metrics_limits, angles_limits)
 
     print('\n----------  FREE THROW EVALUTATION ----------')
@@ -627,7 +630,7 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     }
 
     # Call the function to get min_angle differences and the mean for elbows
-    results_min_diff, results_min_angles = compute_joint_angle_differences(vertices, vertices_compare, joint_parts_min, is_min=True, joint_types=["Knees", "Pelvis", "Arms"])
+    results_min_diff, results_min_angles = compute_joint_angle_differences(vertices, vertices_compare, joint_parts_min, is_min=True, joint_types=["Arms", "Knees", "Pelvis"])
 
     # Define the body segments with the corresponding bone indices
     joint_parts_max = {
@@ -635,13 +638,13 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
         'LeftArm': (bones_list.index('Spine'), bones_list.index('LeftArm'), bones_list.index('LeftForeArm')),
     }
 
-    # Call the function to get min_angle differences and the mean for elbows
+    # Call the function to get max_angle differences and the mean for elbows
     results_max_diff, results_max_angles = compute_joint_angle_differences(vertices, vertices_compare, joint_parts_max, is_min=False, joint_types=['Arms', 'Pelvis'])
 
 
     ## Define some important values to compute the metric
     # Apply the coefficent to the speed differnce
-    speed_diff = abs(speed_diff) * SPEED_METRIC
+    speed_metric = abs(speed_diff) * SPEED_COEFF
 
     # Difference in minimum right elbow angles between the Player and the Gold Standard
     elbows_R_min_diff = results_min_diff['RightElbow_diff'] 
@@ -655,23 +658,20 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     knees_mean_diff = results_min_diff['Knees_mean_diff']
     # Difference in average minimum pelvis angle between the player and the gold standard
     pelvis_mean_diff_min = results_min_diff['Pelvis_mean_diff']
-    # print ('pelvis mean', pelvis_mean_diff)
+    # pelvis_mean_diff_max = results_max_diff['Pelvis_mean_diff']
 
 
     # Sum the differences between the angles of the right elbow, left elbow, the min mean and max mean of the arms with the Gold Standard ones
     # The elbows have more importance in a free throw, so we keep them separately
     arms_angles_metric = sum(map(abs, (elbows_R_min_diff, elbows_L_min_diff, arms_mean_diff_min, arms_mean_diff_max)))
     # Calculate arm metrics by adding the distances and angles of the principal components of the upper body multiplied by a coefficient
-    arms_metric = (np.sum(arms_distances) + arms_angles_metric) * ARMS_METRIC
-
-    # Sum the differences between the angles of the min mean and max mean of the pelvis, and the min mean of the knees with the Gold Standard ones
-    legs_angles_metric = abs(pelvis_mean_diff_min + results_max_diff['Pelvis_mean_diff'] + knees_mean_diff)
+    arms_metric = (np.sum(arms_distances) + arms_angles_metric) * ARMS_COEFF
     # Calculate leg metrics by adding the distances and angles of the principal components of the lower body multiplied by a coefficient
-    legs_metric = (np.sum(legs_distances) + legs_angles_metric) * LEGS_METRIC
-    # Calculate the metrics of the remaining body components multiplied by a coefficient
-    other_metric = np.sum(other_distances) * OTHER_METRIC
+    legs_metric = (np.sum(legs_distances) + abs(knees_mean_diff)) * LEGS_COEFF
+    # Calculate the metrics of the remaining body components multiplied by a coefficient (at the moment only the pelvis is considered)
+    other_metric = (np.sum(other_distances) + abs(pelvis_mean_diff_min)) * OTHER_COEFF
     # Calculate the overall summing all the metrics
-    overall_metric = arms_metric + legs_metric + other_metric + speed_diff
+    overall_metric = arms_metric + legs_metric + other_metric + speed_metric
 
 
     # print(f'Total arms: {arms_angles_metric}')
@@ -690,6 +690,7 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     range_L_arm_GS = results_max_angles['LeftArm_angles'][1] - results_min_angles['LeftArm_angles'][1]
 
 
+    # Create a dictionary with all the values
     suggestions_parameters = {
         "overall_metric": overall_metric,
         "arms_metric": arms_metric,
@@ -705,7 +706,7 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
         "knees_mean_diff": knees_mean_diff,
         "other_metric": other_metric,
         "pelvis_mean_diff_min": pelvis_mean_diff_min,
-        "speed_diff": speed_diff
+        "speed_metric": speed_metric
     }
 
 
