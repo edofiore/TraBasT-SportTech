@@ -100,13 +100,13 @@ def kalmanFilter(sourceModel):
     for i, row in df.iterrows():
         if (row[X] == 0.0 or row[X] == None or type(row[X]) != np.float64) and (row[Y] == 0.0 or row[Y] == None or type(row[Y]) != np.float64) and (row[Z] == 0.0 or row[Z] == None or type(row[Z]) != np.float64):
             kalman.predict()
-            print(f'Missing values detected: {row[X]}, {row[Y]}, {row[Z]}')
+            # print(f'Missing values detected: {row[X]}, {row[Y]}, {row[Z]}')
         else:
             measurement = np.array([row[X], row[Y], row[Z]], dtype=np.float32)
             kalman.predict()
             kalman.correct(measurement)
 
-        estimatedCoords[i] = measurement.flatten() #kalman.statePost[:3].flatten()
+        estimatedCoords[i] = kalman.statePost[:3].flatten() # measurement.flatten()
 
     # fill in the missing coordinates in the DataFrame
     df_estimated = df.copy()
