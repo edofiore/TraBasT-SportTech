@@ -153,7 +153,7 @@ def align_pelvises(skeleton_frames_1, skeleton_frames_2):
     # Return the aligned skeletons as a numpy array
     return np.array(skeleton_aligned_complete)     
 
-# Downsample the video or the gold standard to have the same number of frames
+# Downsample the video of the user or of the gold standard to have the same number of frames
 def downsample_video(lists_of_points, lists_of_pointsCompare):
     """
     Parameters:

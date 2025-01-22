@@ -225,6 +225,9 @@ def markerRigidBodyPlot(data, fName, typeOfFiltering):
 
     option = input("Enter your choice: ")
     if option == '1':
+      if not checkDir(mode=SAVE, path=SAVE_VIDEO_PATH):
+        print(f"Error: Impossible to save the video in the directory: {SAVE_VIDEO_PATH}")
+        return
       print("Saving and showing video...")
       SAVE_VIDEO = True
       visualizer = setVisualizer(10.0)
@@ -263,6 +266,9 @@ def skeletonMarkerPlot(data, fName):
 
     option = input("Enter your choice: ")
     if option == '1':
+      if not checkDir(mode=SAVE, path=SAVE_VIDEO_PATH):
+        print(f"Error: Impossible to save the video in the directory: {SAVE_VIDEO_PATH}")
+        return
       print("Saving and showing video...")
       SAVE_VIDEO = True
       visualizer = setVisualizer(8.0)
@@ -510,7 +516,7 @@ def skeletonJointsPlot(data, fName, compareData=None, fNameCompare=None):
       
       visualizer.destroy_window()
       print("Video not saved")
-      # break
+      break
 
     else:
       print("Invalid input, try again.")
