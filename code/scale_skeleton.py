@@ -29,8 +29,13 @@ from types import SimpleNamespace
 # KNEES_ANGLE_LIMIT = 15
 # PELVIS_ANGLE_LIMIT = 3
 
-
-# Define threshold for the different parts of the body
+# ----------------------------------------------------------------------------------
+# The "importance" field is used to assign different priority levels to various parts of the free throw evaluation process. 
+# The idea is to compare the defined limits with the actual performance, and if a limit is respected, 
+# the corresponding "importance" value is added to the final score. 
+# This allows to calculate the percentage of goodness of the shot, since we compare the final score with the total obtainable score.
+# ----------------------------------------------------------------------------------
+# Define thresholds for the different parts of the body
 LIMITS = {
     'ARMS_LIMIT': SimpleNamespace(value=460, importance=3),   # Maximum limit for arms
     'LEGS_LIMIT': SimpleNamespace(value=260, importance=2),   # Maximum limit for legs
@@ -154,30 +159,30 @@ def align_pelvises(skeleton_frames_1, skeleton_frames_2):
     return np.array(skeleton_aligned_complete)     
 
 # Downsample the video or the gold standard to have the same number of frames
-def downsample_video(lists_of_points, lists_of_pointsCompare):
+def downsample_video(lists_of_points, lists_of_points_compare):
     """
     Parameters:
     - lists_of_points: 
-    - lists_of_pointsCompare: 
+    - lists_of_points_compare: 
     """
 
     # Calculate step size for regular removal
     len_p = len(lists_of_points)
-    len_p_c = len(lists_of_pointsCompare)
+    len_p_c = len(lists_of_points_compare)
     if len_p == len_p_c:
-        return lists_of_points, lists_of_pointsCompare, len_p, len_p_c
+        return lists_of_points, lists_of_points_compare, len_p, len_p_c
     if len_p > len_p_c:
         long_video = lists_of_points
         target_length = len_p_c
     else:
-        long_video = lists_of_pointsCompare
+        long_video = lists_of_points_compare
         target_length = len_p
 
     indices = np.linspace(0, len(long_video)-1, target_length, dtype=int)
     long_video = [long_video[i] for i in indices]
 
     if len_p > len_p_c:
-        return long_video, lists_of_pointsCompare, len_p, len_p_c
+        return long_video, lists_of_points_compare, len_p, len_p_c
     else:
         return lists_of_points, long_video, len_p, len_p_c
     
@@ -311,8 +316,8 @@ def compute_joint_angle_differences(vertices, vertices_compare, joint_parts, is_
     results_diff["Total_mean_diff"] = total_mean_diff
 
     return results_diff, results_angles
-
-
+ 
+# Function to evaluate the arms in the free throw, and define suggestions
 def arms_evaluation(parameters):
 
     """
@@ -332,12 +337,13 @@ def arms_evaluation(parameters):
     suggestions = []
     score = 0.0
 
-    # Evaluation of the player's free throw
+    # If under the limit add all the possible score: the arms movement is good, and it doesn't require any adjustmant
     if arms_metric < LIMITS['ARMS_LIMIT'].value:
         score += (LIMITS['ARMS_LIMIT'].importance + ANGLES_LIMITS['R_ELBOW_ANGLE_LIMIT'].importance 
                   + ANGLES_LIMITS['L_ELBOW_ANGLE_LIMIT'].importance + ANGLES_LIMITS['ARMS_ANGLE_LIMIT'].importance 
                   + ANGLES_LIMITS['R_ARM_RANGE_ANGLE_LIMIT'].importance + ANGLES_LIMITS['L_ARM_RANGE_ANGLE_LIMIT'].importance
                   )
+    # else check the specific parts of the arms to define suggestions or update the score
     else:
         suggestions.append('\nArms adjustments needed.')
         suggestions.append('Your arms positioning could use some adjustments. Try the following:')
@@ -379,7 +385,7 @@ def arms_evaluation(parameters):
 
     return score, suggestions
     
-# define suggestions for the legs part and update score 
+# Function to define suggestions for the legs part and to update score 
 def legs_evaluation(parameters):
 
     """
@@ -392,8 +398,10 @@ def legs_evaluation(parameters):
     suggestions = []
     score = 0.0
     
+    # If under the limit add all the possible score: the legs movement is good, and it doesn't require any adjustmant
     if legs_metric < LIMITS['LEGS_LIMIT'].value:
         score += (LIMITS['LEGS_LIMIT'].importance + ANGLES_LIMITS['KNEES_ANGLE_LIMIT'].importance)
+    # else check for each part of the legs if the movement is done correctly: if not give suggestions, else update the score
     else:
         suggestions.append('\nLegs adjustments needed.')
         suggestions.append('Your legs could use some adjustments. Try the following:')
@@ -407,6 +415,7 @@ def legs_evaluation(parameters):
 
     return score, suggestions
 
+# Function to define suggestions for the other parts of the body and to update score 
 def other_evalutation(parameters):
 
     """
@@ -419,8 +428,10 @@ def other_evalutation(parameters):
     suggestions = []
     score = 0.0
 
+    # If under the limit add all the possible score: the movement is good, and it doesn't require any adjustmant
     if other_metric < LIMITS['OTHER_LIMIT'].value:
         score += (LIMITS['OTHER_LIMIT'].importance + ANGLES_LIMITS['PELVIS_ANGLE_LIMIT'].importance)
+    # else check if the movement of the rest of the body is done correctly (at the moment we consider only the pelvis): if not give suggestions, else update the score
     else:
         suggestions.append('\nBack and posture adjustments needed.')
         suggestions.append('Your overall posture could use some adjustments. Try the following:')
@@ -435,6 +446,7 @@ def other_evalutation(parameters):
 
     return score, suggestions
 
+# Function to evaluate the free throw speed: if the speed is good update the score, otherwise give suggestions
 def speed_evaluation(parameters):
 
     """
@@ -464,6 +476,8 @@ def speed_evaluation(parameters):
 
     return score, suggestions
 
+## Function to calculate the total score of the player and define the suggestions to give to him.
+# The total score is necessary to then compute the percentage of goodness of the free throw
 def define_suggestions(actual_score, parameters):
 
     """
@@ -476,11 +490,11 @@ def define_suggestions(actual_score, parameters):
 
     overall_metric = parameters["overall_metric"]
     
-    # Check if it is a good free threshold
+    # Check if it is a good free throw: if yes update the score
     if overall_metric < LIMITS['OVERALL_LIMIT'].value:
         actual_score += LIMITS['OVERALL_LIMIT'].importance
         suggestions.append('Your shooting is good, keep it up!\n')
-
+    # else give suggestions
     else:
         suggestions.append('You should adjust a little your shooting, but do not be discouraged! I will help you!\n')
 
@@ -511,7 +525,7 @@ def define_suggestions(actual_score, parameters):
 
     return actual_score, suggestions
 
-# Function to calculate the percentage-
+# Function to calculate the percentage
 def calculate_total_percentage(final_score, metrics_limits, angles_limits):
 
     """
@@ -539,6 +553,7 @@ def free_throw_goodness(final_score, metrics_limits, angles_limits):
     - angles_limits: list of angle limits
     """
 
+    # Compute the percentage
     percentage = calculate_total_percentage(final_score, metrics_limits, angles_limits)
 
     print('\n----------  FREE THROW EVALUTATION ----------')
@@ -690,6 +705,7 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     range_L_arm_GS = results_max_angles['LeftArm_angles'][1] - results_min_angles['LeftArm_angles'][1]
 
 
+    # Create a dictionary with all the values
     suggestions_parameters = {
         "overall_metric": overall_metric,
         "arms_metric": arms_metric,
@@ -717,6 +733,6 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
     # Evaluating the goodness of the free throw
     free_throw_goodness(final_score, LIMITS, ANGLES_LIMITS)
 
-    # Print all the suggestions
+    # Printing all the suggestions
     for suggestion in suggestions:
         print(suggestion)
