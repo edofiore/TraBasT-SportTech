@@ -630,7 +630,7 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
         "LeftHip": (bones_list.index('Spine'), bones_list.index('LeftUpLeg'), bones_list.index("LeftLeg")),
     }
 
-    # Call the function to get min_angle differences and the mean for elbows
+    # Call the function to get min_angle differences and the mean for arms, knees and pelvis
     results_min_diff, results_min_angles = compute_joint_angle_differences(vertices, vertices_compare, joint_parts_min, is_min=True, joint_types=["Arms", "Knees", "Pelvis"])
 
     # Define the body segments with the corresponding bone indices
@@ -639,7 +639,7 @@ def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_com
         'LeftArm': (bones_list.index('Spine'), bones_list.index('LeftArm'), bones_list.index('LeftForeArm')),
     }
 
-    # Call the function to get max_angle differences and the mean for elbows
+    # Call the function to get max_angle differences and the mean for arms and pelvis
     results_max_diff, results_max_angles = compute_joint_angle_differences(vertices, vertices_compare, joint_parts_max, is_min=False, joint_types=['Arms', 'Pelvis'])
 
 
