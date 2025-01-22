@@ -35,8 +35,8 @@ LIMITS = {
     'ARMS_LIMIT': SimpleNamespace(value=460, importance=3),   # Maximum limit for arms
     'LEGS_LIMIT': SimpleNamespace(value=260, importance=2),   # Maximum limit for legs
     'OTHER_LIMIT': SimpleNamespace(value=140, importance=1),  # Maximum limit for posture
-    'OVERALL_LIMIT': SimpleNamespace(value=900, importance=5),  # Overall performance limit
     'SPEED_LIMIT': SimpleNamespace(value=40, importance=2),   # Limit for shooting speed
+    'OVERALL_LIMIT': SimpleNamespace(value=900, importance=5)  # Overall performance limit
 }
 
 # Define the limits for angles: accectable difference from the GS

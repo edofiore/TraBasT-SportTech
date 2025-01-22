@@ -1,6 +1,4 @@
 import numpy as np
-from fractions import Fraction
-import math
 import matplotlib.pyplot as plt
 from types import SimpleNamespace
 
