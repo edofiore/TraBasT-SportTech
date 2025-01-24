@@ -5,7 +5,7 @@ from global_constants import *
 from I_O import *
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from shoot_analysis import *
+from shot_analysis import *
 
 # The number of frames per second for the videos we want to save
 FPS = 90
