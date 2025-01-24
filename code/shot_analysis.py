@@ -18,25 +18,25 @@ from types import SimpleNamespace
 # ----------------------------------------------------------------------------------
 # Thresholds for the different parts of the body to compare with user
 LIMITS = {
-    'ARMS_LIMIT': SimpleNamespace(value=460, importance=3),   # Maximum limit for arms
-    'LEGS_LIMIT': SimpleNamespace(value=260, importance=2),   # Maximum limit for legs
+    'ARMS_LIMIT': SimpleNamespace(value=460, importance=4),   # Maximum limit for arms
+    'LEGS_LIMIT': SimpleNamespace(value=260, importance=3),   # Maximum limit for legs
     'OTHER_LIMIT': SimpleNamespace(value=140, importance=1),  # Maximum limit for posture
     'SPEED_LIMIT': SimpleNamespace(value=40, importance=2),   # Limit for shooting speed
-    'OVERALL_LIMIT': SimpleNamespace(value=900, importance=5)  # Overall performance limit
+    'OVERALL_LIMIT': SimpleNamespace(value=900, importance=10)  # Overall performance limit
 }
 
 # Limits for angles: accectable difference from the GS
 ANGLES_LIMITS = {
-    'R_ELBOW_ANGLE_LIMIT': SimpleNamespace(value=20, importance=4),  # Limit in order to know if the right elbow is too bent or too extended
-    'L_ELBOW_ANGLE_LIMIT': SimpleNamespace(value=20, importance=4),  # Limit in order to know if the left elbow is too bent or too extended
-    'ARMS_ANGLE_LIMIT': SimpleNamespace(value=30, importance=2),  # Limit in order to know if the arms are too high or too low
+    'R_ELBOW_ANGLE_LIMIT': SimpleNamespace(value=20, importance=5),  # Limit in order to know if the right elbow is too bent or too extended
+    'L_ELBOW_ANGLE_LIMIT': SimpleNamespace(value=20, importance=5),  # Limit in order to know if the left elbow is too bent or too extended
+    'ARMS_ANGLE_LIMIT': SimpleNamespace(value=30, importance=3),  # Limit in order to know if the arms are too high or too low
 
     # If the arms range is too large means that the shot is too irregular, because there is a moment during the shot
     # where your arms are too low, and another where your arms are too much over/behind the head/neck
-    'R_ARM_RANGE_ANGLE_LIMIT': SimpleNamespace(value=30, importance=2),  # Limit in order to know if the movement of the right arm is too wide
-    'L_ARM_RANGE_ANGLE_LIMIT': SimpleNamespace(value=30, importance=2),  # Limit in order to know if the movement of the left arm is too wide
+    'R_ARM_RANGE_ANGLE_LIMIT': SimpleNamespace(value=30, importance=3),  # Limit in order to know if the movement of the right arm is too wide
+    'L_ARM_RANGE_ANGLE_LIMIT': SimpleNamespace(value=30, importance=3),  # Limit in order to know if the movement of the left arm is too wide
     
-    'KNEES_ANGLE_LIMIT': SimpleNamespace(value=15, importance=2),  # Limit for knee bend during shooting
+    'KNEES_ANGLE_LIMIT': SimpleNamespace(value=15, importance=3),  # Limit for knee bend during shooting
     'PELVIS_ANGLE_LIMIT': SimpleNamespace(value=3, importance=1),  # Limit for pelvis position
 }
 
@@ -558,8 +558,10 @@ def free_throw_goodness(final_score, metrics_limits, angles_limits):
         print("-> GOOD PLAYER: Solid technique! Just fine-tune your shot.\n")
     elif percentage <= 90:
         print("-> PRO PLAYER: Excellent! You're almost at the top.\n")
+    elif percentage <= 97:
+        print("-> GOAT PLAYER: Incredible! Your performance is approaching the Gold Standard.\n")
     else:
-        print("-> GOAT PLAYER: Unbelievable! Your form matches the Gold Standard.\n")
+        print("-> GOLD STANDARD: Unbelievable! Your form matches the Gold Standard.\n")
 
 # Compute the performance of the shooting with respect to the gold standard
 def compute_performance(vertices, vertices_compare, bones_list, len_p, len_p_compare):
