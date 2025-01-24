@@ -555,9 +555,9 @@ def free_throw_goodness(final_score, metrics_limits, angles_limits):
     elif percentage <= 60:
         print("-> AMATEUR PLAYER: The basics are set, now refine your technique.\n")
     elif percentage <= 80:
-        print("-> PRO PLAYER: Solid technique! Just fine-tune your shot.\n")
+        print("-> GOOD PLAYER: Solid technique! Just fine-tune your shot.\n")
     elif percentage <= 90:
-        print("-> ELITE PLAYER: Excellent! You're almost at the top.\n")
+        print("-> PRO PLAYER: Excellent! You're almost at the top.\n")
     else:
         print("-> GOAT PLAYER: Unbelievable! Your form matches the Gold Standard.\n")
 
