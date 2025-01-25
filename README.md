@@ -51,4 +51,4 @@ Finally, the video will be displayed.
 - If you encounter issues with the packages or running the code, verify that all dependencies listed in `requirements.txt` have been correctly installed.
 
 ## Report
-The report (a brief explanation of the project and how it is done) can be read [here]()
+The report (a brief explanation of the project and how it is done) can be read [here](https://github.com/edofiore/TraBasT-SportTech/blob/main/Sport_Tech_Report.pdf)
